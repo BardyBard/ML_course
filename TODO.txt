@@ -1,0 +1,3 @@
+- fork the course repo instead of using a local copy (oops)
+- run the regression methods i.e. add some code to run.py
+- add the rest of the methods from Step 2

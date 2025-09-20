@@ -4,8 +4,10 @@ import csv
 import numpy as np
 import os
 
-
-def load_csv_data(data_path, sub_sample=False):
+# I added max_rows to speed up the loading. 
+# It was taking me way too long to load the whole sample and only take the last 50 entries.
+# That can be removed when we're done testing. -M
+def load_csv_data(data_path, max_rows = None, sub_sample=False):
     """
     This function loads the data and returns the respectinve numpy arrays.
     Remember to put the 3 files in the same folder and to not change the names of the files.
@@ -27,12 +29,13 @@ def load_csv_data(data_path, sub_sample=False):
         skip_header=1,
         dtype=int,
         usecols=1,
+        max_rows=max_rows
     )
     x_train = np.genfromtxt(
-        os.path.join(data_path, "x_train.csv"), delimiter=",", skip_header=1
+        os.path.join(data_path, "x_train.csv"), delimiter=",", skip_header=1, max_rows=max_rows
     )
     x_test = np.genfromtxt(
-        os.path.join(data_path, "x_test.csv"), delimiter=",", skip_header=1
+        os.path.join(data_path, "x_test.csv"), delimiter=",", skip_header=1, max_rows=max_rows
     )
 
     train_ids = x_train[:, 0].astype(dtype=int)
