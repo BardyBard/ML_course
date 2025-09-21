@@ -5,9 +5,9 @@ import numpy as np
 import os
 
 # I added max_rows to speed up the loading. 
-# It was taking me way too long to load the whole sample and only take the last 50 entries.
+# It was taking me way too long to load the whole sample and subsample it later.
 # That can be removed when we're done testing. -M
-def load_csv_data(data_path, max_rows = None, sub_sample=False):
+def load_csv_data(data_path, max_rows = None, max_features = None, NaNstrat = None, sub_sample=False):
     """
     This function loads the data and returns the respectinve numpy arrays.
     Remember to put the 3 files in the same folder and to not change the names of the files.
@@ -44,10 +44,26 @@ def load_csv_data(data_path, max_rows = None, sub_sample=False):
     x_test = x_test[:, 1:]
 
     # sub-sample
-    if sub_sample:
+    if sub_sample: # unused
         y_train = y_train[::50]
         x_train = x_train[::50]
         train_ids = train_ids[::50]
+
+
+    if max_features:
+        x_train = x_train[:, :max_features]
+        
+    if max_rows:
+        y_train = y_train[:max_rows]
+        x_train = x_train[:max_rows]
+        train_ids = train_ids[:max_rows]
+    
+    if NaNstrat:
+        # temporary solution: fill NaNs with column mean
+        col_means = np.nanmean(x_train, axis=0)
+        inds = np.where(np.isnan(x_train))
+        x_train[inds] = np.take(col_means, inds[1])
+
 
     return x_train, x_test, y_train, train_ids, test_ids
 

@@ -27,10 +27,13 @@ def compute_gradient(y, tx, w):
     Returns:
         An numpy array of shape (2, ) (same shape as w), containing the gradient of the loss at w.
     """
-    N = len(tx)
-    e = y - (tx @ w)
-    return -1 / N * np.transpose(tx) @ e 
+    # print(f"compute_gradient got y = {y}, tx = {tx}, w = {w}")
 
+    N = len(y)
+    y_pred = tx @ w
+    error = y_pred - y
+    return tx.T @ error / N
+    
 
 def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     """Linear regression using gradient descent.
@@ -47,10 +50,8 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     """
     w = initial_w.copy()
     for _ in range(max_iters):
-        # y_pred = tx @ w
-        # error = y_pred - y
-        # grad = tx.T @ error / len(y)
         grad = compute_gradient(y, tx, w)
+        # print("grad is", grad)
         w = w - gamma * grad
     loss = compute_loss(y, tx, w)
     return w, loss
@@ -91,13 +92,9 @@ def least_squares(y, tx):
     Returns:
         (w, loss): tuple of numpy array of shape (2,) w last weight and float.
     """
-    # This operation is ill-conditioned.  
-    # For full rank matrices, it would be fastest with Cholesky decomposition 
-    # (check with np.linalg.matrix_rank(tx)), otherwise QR decomp is good.
-    # `Q, R = np.linalg.qr(tx)
-    # w = np.linalg.solve(R, Q.T @ y)`
-    # Try it out if time allows. -M
+    # Proceed carefully: naive impletentaion is ill-conditioned.  
+    # Let np.linalg do the hard work. -M
     # 
-    w = np.linalg.inv(tx.T @ tx) @ tx.T @ y 
+    w = np.linalg.solve(tx.T @ tx, tx.T @ y)  
     loss = compute_loss(y, tx, w)
     return w, loss
