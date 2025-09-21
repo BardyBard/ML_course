@@ -41,7 +41,10 @@ if debug:
 w, loss1 = mean_squared_error_gd(y_train, tx, w0, max_iters, gamma)
 w, loss2 = mean_squared_error_sgd(y_train, tx, w0, max_iters, gamma)
 w, loss3 = least_squares(y_train, tx) 
-w, loss4 = ridge_regression(y_train, tx, .1)
+lambda_ = .1 # I guess the regularization param in ridge doesn't have to be very big for standardized data -M
+w, loss4 = ridge_regression(y_train, tx, lambda_) 
+
+
 
 if debug : print(w, sep = "\n----------------------\n")
 # Print the results

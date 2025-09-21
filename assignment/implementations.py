@@ -29,7 +29,7 @@ def compute_gradient(y, tx, w):
     """
     # print(f"compute_gradient got y = {y}, tx = {tx}, w = {w}")
 
-    N = len(y)
+    N = tx.shape[0]
     y_pred = tx @ w
     error = y_pred - y
     return tx.T @ error / N
@@ -70,7 +70,7 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
         (w, loss): tuple of numpy array of shape (2,) w last weight and float.
     """
     w = initial_w.copy()
-    N = len(tx)
+    N = tx.shape[1]
     for _ in range(max_iters):
         random_index = np.random.randint(N)
         sampled_y = np.array([y[random_index]])
@@ -120,3 +120,4 @@ def ridge_regression(y, tx, lambda_):
     w = np.linalg.solve(M, b)
     loss = compute_loss(y, tx, w)
     return w, loss
+
