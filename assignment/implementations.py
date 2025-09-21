@@ -94,7 +94,29 @@ def least_squares(y, tx):
     """
     # Proceed carefully: naive impletentaion is ill-conditioned.  
     # Let np.linalg do the hard work. -M
-    # 
-    w = np.linalg.solve(tx.T @ tx, tx.T @ y)  
+
+    # solve Mw = b
+    M = tx.T @ tx
+    b = tx.T @ y
+    w = np.linalg.solve(M, b)  
+    loss = compute_loss(y, tx, w)
+    return w, loss
+
+def ridge_regression(y, tx, lambda_):
+    """Ridge regression using normal equations.
+
+    Args:
+        y: numpy array of shape=(N, )
+        tx: numpy array of shape=(N,2)
+        lambda_: float. The regularization parameter
+        
+    Returns:
+        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+    """
+    # solve Mw = b
+    I = np.eye(tx.shape[1])
+    M = tx.T @ tx + lambda_ * I
+    b = tx.T @ y
+    w = np.linalg.solve(M, b)
     loss = compute_loss(y, tx, w)
     return w, loss

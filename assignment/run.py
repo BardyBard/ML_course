@@ -41,10 +41,12 @@ if debug:
 w, loss1 = mean_squared_error_gd(y_train, tx, w0, max_iters, gamma)
 w, loss2 = mean_squared_error_sgd(y_train, tx, w0, max_iters, gamma)
 w, loss3 = least_squares(y_train, tx) 
+w, loss4 = ridge_regression(y_train, tx, .1)
 
 if debug : print(w, sep = "\n----------------------\n")
 # Print the results
 print(f"Initial weights: {w0}")
 print(f"No of iterations: {max_iters}")
 print(f"Learning rate: {gamma}")
-print(f"L[GD] = {loss1}", f"L[SGD] = {loss2}", f"L[OLS] = {loss3}", sep = "\n")
+print(f"L[GD] = {loss1}", f"L[SGD] = {loss2}", f"L[OLS] = {loss3}", 
+      f"L[RR] = {loss4}", sep = "\n")
