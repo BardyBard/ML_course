@@ -100,7 +100,8 @@ def least_squares(y, tx):
 
     M = tx.T @ tx
     b = tx.T @ y
-    w = np.linalg.solve(M, b)  
+    w = np.linalg.pinv(M) @ b
+    # w = np.linalg.solve(M, b)
     loss = compute_loss(y, tx, w)
     return w, loss
 
