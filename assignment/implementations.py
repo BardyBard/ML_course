@@ -6,8 +6,8 @@ def compute_loss(y, tx, w):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        w: numpy array of shape=(2,). The vector of model parameters.
+        tx: numpy array of shape=(N, D)
+        w: numpy array of shape=(D, ). The vector of model parameters.
 
     Returns:
         the value of the loss (a scalar), corresponding to the input parameters w.
@@ -20,12 +20,12 @@ def compute_gradient(y, tx, w):
     """Computes the gradient at w.
 
     Args:
-        y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        w: numpy array of shape=(2, ). The vector of model parameters.
+        y: numpy array of shape=(N,)
+        tx: numpy array of shape=(N, D)
+        w: numpy array of shape=(D,). The vector of model parameters.
 
     Returns:
-        An numpy array of shape (2, ) (same shape as w), containing the gradient of the loss at w.
+        An numpy array of shape (D,) (same shape as w), containing the gradient of the loss at w.
     """
     N = tx.shape[0]
     y_pred = tx @ w
@@ -37,14 +37,14 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     """Linear regression using gradient descent.
 
     Args:
-        y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        initial_w: numpy array of shape=(2,). The vector of model parameters.
+        y: numpy array of shape=(N,)
+        tx: numpy array of shape=(N, D)
+        initial_w: numpy array of shape=(D,). The vector of model parameters.
         max_iters: int. The number of iterations to run the algorithm.
         gamma: float. The stepsize (learning rate).
 
     Returns:
-        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+        (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     w = initial_w.copy()
     for _ in range(max_iters):
@@ -59,13 +59,13 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        initial_w: numpy array of shape=(2,). The vector of model parameters.
+        tx: numpy array of shape=(N, D)
+        initial_w: numpy array of shape=(D,). The vector of model parameters.
         max_iters: int. The number of iterations to run the algorithm.
         gamma: float. The stepsize (learning rate).
 
     Returns:
-        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+        (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     w = initial_w.copy()
     N = len(tx)
@@ -85,10 +85,10 @@ def least_squares(y, tx):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
+        tx: numpy array of shape=(N, D)
         
     Returns:
-        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+        (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     # Proceed carefully: naive impletentaion is ill-conditioned.  
     # Let np.linalg.solve do the hard work. 
@@ -97,14 +97,10 @@ def least_squares(y, tx):
     # - removing linearly dependent rows and columns
     # - adding regularization; but that would be equivalent to ridge/lasso
     # I suggest we try fixing it in the 1st way, but will check with the TA's as well. -M
- 
+
     M = tx.T @ tx
     b = tx.T @ y
-    try:
-        w = np.linalg.solve(M, b)  
-    except:
-        print("Oh no, the matrix M is singular! M =", len(M))
-        a = input()
+    w = np.linalg.solve(M, b)  
     loss = compute_loss(y, tx, w)
     return w, loss
 
@@ -113,11 +109,11 @@ def ridge_regression(y, tx, lambda_):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
+        tx: numpy array of shape=(N, D)
         lambda_: float. The regularization parameter
         
     Returns:
-        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+        (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     # solve Mw = b
     I = np.eye(tx.shape[1])
@@ -142,8 +138,8 @@ def compute_logistic_loss(y, tx, w):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        w: numpy array of shape=(2,). The vector of model parameters.
+        tx: numpy array of shape=(N, D)
+        w: numpy array of shape=(D,). The vector of model parameters.
 
     Returns:
         the value of the loss (a scalar), corresponding to the input parameters w.
@@ -160,11 +156,11 @@ def compute_logistic_gradient(y, tx, w):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        w: numpy array of shape=(2, ). The vector of model parameters.
+        tx: numpy array of shape=(N, D)
+        w: numpy array of shape=(D,). The vector of model parameters.
 
     Returns:
-        An numpy array of shape (2, ) (same shape as w), containing the gradient of the loss at w.
+        An numpy array of shape (D,) (same shape as w), containing the gradient of the loss at w.
     """
     N = tx.shape[0]
     e = sigmoid(tx @ w) - y
@@ -176,13 +172,13 @@ def logistic_error_gd(y, tx, initial_w, max_iters, gamma):
 
     Args:
         y: numpy array of shape=(N, )
-        tx: numpy array of shape=(N,2)
-        initial_w: numpy array of shape=(2,). The vector of model parameters.
+        tx: numpy array of shape=(N, D)
+        initial_w: numpy array of shape=(D,). The vector of model parameters.
         max_iters: int. The number of iterations to run the algorithm.
         gamma: float. The stepsize (learning rate).
 
     Returns:
-        (w, loss): tuple of numpy array of shape (2,) w last weight and float.
+        (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     w = initial_w.copy()
     for _ in range(max_iters):
@@ -202,10 +198,10 @@ def preprocess(x_train):
         - prepend a bias column of 1s
 
     Args:
-        x_train: numpy array of shape (N,D)
+        x_train: numpy array of shape (N, D)
 
     Returns:
-        tx: numpy array of shape (N,D'), where D' <= D + 1
+        tx: numpy array of shape (N, D'), where D' <= D + 1
     """
     # Remove 0-variance columns
     mask = x_train.std(axis=0) != 0
