@@ -47,7 +47,7 @@ def compute_gradient_sgd(y, tx, w):
     """
     y_pred = np.dot(w, tx)
     error = y_pred - y
-    return -error * tx
+    return error * tx
 
 
 def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
