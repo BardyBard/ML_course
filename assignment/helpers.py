@@ -43,6 +43,8 @@ def load_csv_data(data_path, max_rows = None, max_features = None, NaNstrat = No
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
+    # remove duplicate rows
+
     # sub-sample
     if sub_sample: # unused
         y_train = y_train[::50]
@@ -59,10 +61,13 @@ def load_csv_data(data_path, max_rows = None, max_features = None, NaNstrat = No
         train_ids = train_ids[:max_rows]
     
     if NaNstrat:
+        # remove all columns that contain only NaNs
+        NaNcols = ~np.all(np.isnan(x_train), axis=0)
+        x_train = x_train[:, NaNcols]
         # temporary solution: fill NaNs with column mean
         col_means = np.nanmean(x_train, axis=0)
-        inds = np.where(np.isnan(x_train))
-        x_train[inds] = np.take(col_means, inds[1])
+        NaNrows = np.where(np.isnan(x_train))
+        x_train[NaNrows] = np.take(col_means, NaNrows[1])
 
 
     return x_train, x_test, y_train, train_ids, test_ids
@@ -89,3 +94,20 @@ def create_csv_submission(ids, y_pred, name):
         writer.writeheader()
         for r1, r2 in zip(ids, y_pred):
             writer.writerow({"Id": int(r1), "Prediction": int(r2)})
+
+def print_result(method_name, loss, w, additional_info = None):
+    """
+    This function formats and prints the outputs of a regression method.
+    Loss is rounded to 5 decimals, and weights to 2.
+    If `additional_info` is provided, it will be printed at the end of the output.
+
+    Args:
+        method_name (str): name of the method used
+        loss (float): loss returned by the regression method
+        w (list, np.array): weights returned by the regression method
+        additional_info (str): optional information that could be printed at the end of the output
+    """
+    out = f"[{method_name}] loss = {loss:.5f}, w = {np.round(w, 2)}"
+    if additional_info:
+        out += f" ({additional_info})"
+    print(out)
