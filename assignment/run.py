@@ -18,6 +18,7 @@ tx = preprocess(x_train)
 w0 = np.zeros(tx.shape[1])
 max_iters = 100
 gamma = .1 # empirically these gamma values seems to work alright -M
+gamma_sgd = .001
 gamma_logistic = .001
 lambda_ = .1 # I guess the regularization param in ridge doesn't have to be very big for standardized data -M
 
@@ -27,7 +28,7 @@ if debug: # some debug info
 
 # Run it!
 w1, loss1 = mean_squared_error_gd(y_train, tx, w0, max_iters, gamma)
-w2, loss2 = mean_squared_error_sgd(y_train, tx, w0, max_iters, gamma) # blows up with lots of iterations
+w2, loss2 = mean_squared_error_sgd(y_train, tx, w0, max_iters, gamma_sgd)
 w3, loss3 = least_squares(y_train, tx)
 w4, loss4 = ridge_regression(y_train, tx, lambda_)
 w5, loss5 = logistic_error_gd(y_train, tx, w0, max_iters, gamma_logistic)
@@ -37,7 +38,9 @@ w5, loss5 = logistic_error_gd(y_train, tx, w0, max_iters, gamma_logistic)
 # Print the results
 print(f"Initial weights: {w0}")
 print(f"No of iterations: {max_iters}")
-print(f"Learning rate: {gamma}")
+print(f"Learning rate (GD): {gamma}")
+print(f"Learning rate (SGD): {gamma_sgd}")
+print(f"Learning rate (LR): {gamma_logistic}")
 
 
 print_result("GD", loss1, w1)

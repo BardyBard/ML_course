@@ -16,6 +16,7 @@ def compute_loss(y, tx, w):
     average = np.mean(e ** 2) / 2
     return average
 
+
 def compute_gradient(y, tx, w):
     """Computes the gradient at w.
 
@@ -31,7 +32,23 @@ def compute_gradient(y, tx, w):
     y_pred = tx @ w
     error = y_pred - y
     return tx.T @ error / N
-    
+
+
+def compute_gradient_sgd(y, tx, w):
+    """Computes the single-sample gradient at w.
+
+    Args:
+        y: numpy array of shape=(1,)
+        tx: numpy array of shape=(D,)
+        w: numpy array of shape=(D,). The vector of model parameters.
+
+    Returns:
+        An numpy array of shape (D,) (same shape as w), containing the gradient of the loss at w.
+    """
+    y_pred = np.dot(w, tx)
+    error = y_pred - y
+    return -error * tx
+
 
 def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     """Linear regression using gradient descent.
@@ -54,6 +71,7 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     loss = compute_loss(y, tx, w)
     return w, loss
 
+
 def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
     """Linear regression using stochastic gradient descent.
 
@@ -68,16 +86,15 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
         (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     w = initial_w.copy()
-    N = len(tx)
+    N = tx.shape[0]
     for _ in range(max_iters):
         random_index = np.random.randint(N)
         sampled_y = np.array([y[random_index]])
-        sampled_tx = tx[random_index:random_index+1]
-        grad = compute_gradient(sampled_y, sampled_tx, w)
+        sampled_tx = tx[random_index:random_index+1, :].flatten()
+        grad = compute_gradient_sgd(sampled_y, sampled_tx, w)
         w = w - gamma * grad
     loss = compute_loss(y, tx, w)
     return w, loss
-        
 
 
 def least_squares(y, tx):
@@ -104,6 +121,7 @@ def least_squares(y, tx):
     # w = np.linalg.solve(M, b)
     loss = compute_loss(y, tx, w)
     return w, loss
+
 
 def ridge_regression(y, tx, lambda_):
     """Ridge regression using normal equations.
@@ -134,6 +152,7 @@ def sigmoid(x):
     """
     return 1 / (1 + np.exp(-x))
 
+
 def compute_logistic_loss(y, tx, w):
     """Calculate the loss using sigmoid activation function.
 
@@ -152,6 +171,7 @@ def compute_logistic_loss(y, tx, w):
     term2 = (1 - y) * np.log(1 - sigmoid(z) + epsilon)
     return -np.mean(term1 + term2)
 
+
 def compute_logistic_gradient(y, tx, w):
     """Computes the gradient of the logistic loss function at w.
 
@@ -167,6 +187,7 @@ def compute_logistic_gradient(y, tx, w):
     e = sigmoid(tx @ w) - y
     average = (tx.T @ e) / N
     return average
+
 
 def logistic_error_gd(y, tx, initial_w, max_iters, gamma):
     """Logistic regression using gradient descent.
