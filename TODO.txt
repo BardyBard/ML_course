@@ -1,0 +1,4 @@
+- fork the course repo instead of using a local copy (oops)
+- fix least squares: remove linearly dependent rows and columns from least squares input
+- check SGD implementation for errors
+- add the rest of the methods from Step 2
