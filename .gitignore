@@ -111,3 +111,7 @@ ENV/
 *.cb2
 *.fdb_latexmk
 *.synctex.gz
+
+# Data for Project 1
+projects/project1/__pycache__/
+projects/project1/data/dataset/**
