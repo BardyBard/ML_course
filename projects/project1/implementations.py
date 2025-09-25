@@ -189,7 +189,7 @@ def compute_logistic_gradient(y, tx, w):
     return average
 
 
-def logistic_error_gd(y, tx, initial_w, max_iters, gamma):
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
     """Logistic regression using gradient descent.
 
     Args:
