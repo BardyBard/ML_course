@@ -108,9 +108,9 @@ ENV/
 
 
 # Data for Project 1
-assignment/data/dataset.zip
-assignment/data/dataset/sample_submission.csv
-assignment/data/dataset/x_test.csv
-assignment/data/dataset/x_train.csv
-assignment/data/dataset/y_train.csv
-__pycache__/
+projects/project1/__pycache__/
+projects/project1/data/dataset/x_test.csv
+projects/project1/data/dataset/x_train.csv
+projects/project1/data/dataset/y_train.csv
+projects/project1/data/dataset/sample_submission.csv
+projects/project1/data/dataset/dataset.zip
