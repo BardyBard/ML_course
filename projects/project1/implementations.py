@@ -166,7 +166,7 @@ def compute_logistic_loss(y, tx, w):
     """
     y = (y == 1).astype(int) # convert y from {-1, +1} to {0, 1}
     z = tx @ w
-    epsilon = 1e-5 # epsilon trick to control values close to 0 and 1. Source: https://stackoverflow.com/questions/38125319/python-divide-by-zero-encountered-in-log-logistic-regression
+    epsilon = 1e-8 # epsilon trick to control values close to 0 and 1. Source: https://stackoverflow.com/questions/38125319/python-divide-by-zero-encountered-in-log-logistic-regression
     term1 = y * np.log(sigmoid(z) + epsilon)
     term2 = (1 - y) * np.log(1 - sigmoid(z) + epsilon)
     return -np.mean(term1 + term2) # loss does not include the penalty term
