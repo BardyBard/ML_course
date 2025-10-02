@@ -169,10 +169,10 @@ def compute_logistic_loss(y, tx, w):
     epsilon = 1e-5 # epsilon trick to control values close to 0 and 1. Source: https://stackoverflow.com/questions/38125319/python-divide-by-zero-encountered-in-log-logistic-regression
     term1 = y * np.log(sigmoid(z) + epsilon)
     term2 = (1 - y) * np.log(1 - sigmoid(z) + epsilon)
-    return -np.mean(term1 + term2)
+    return -np.mean(term1 + term2) # loss does not include the penalty term
 
 
-def compute_logistic_gradient(y, tx, w):
+def compute_logistic_gradient(y, tx, w, lambda_ = None):
     """Computes the gradient of the logistic loss function at w.
 
     Args:
@@ -186,10 +186,12 @@ def compute_logistic_gradient(y, tx, w):
     N = tx.shape[0]
     e = sigmoid(tx @ w) - y
     average = (tx.T @ e) / N
+    if lambda_: # L2 regularization
+        average += 2 * lambda_ * w # derivation of ||w||**2
     return average
 
 
-def logistic_regression(y, tx, initial_w, max_iters, gamma):
+def logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_ = None):
     """Logistic regression using gradient descent.
 
     Args:
@@ -204,11 +206,13 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
     """
     w = initial_w.copy()
     for _ in range(max_iters):
-        grad = compute_logistic_gradient(y, tx, w)
+        grad = compute_logistic_gradient(y, tx, w, lambda_)
         w = w - gamma * grad
     loss = compute_logistic_loss(y, tx, w)
     return w, loss
 
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    return logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_)
 
 def preprocess(x_train):
     """
