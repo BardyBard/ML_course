@@ -3,10 +3,11 @@ from helpers import load_csv_data, print_result
 
 path_to_dataset = "data/dataset"
 x_train, x_test, y_train, train_ids, test_ids = load_csv_data(
-   path_to_dataset, max_rows=500, max_features = 10, NaNstrat="fill") # I use a small sample for initial tests -M
+    path_to_dataset, max_rows=500, max_features=10, NaNstrat="fill"
+)  # I use a small sample for initial tests -M
 # now use the data...
 
-debug = False # turn this on to see verbose logs
+debug = False  # turn this on to see verbose logs
 
 if debug:
     print("x ", x_train)
@@ -17,13 +18,13 @@ tx = preprocess(x_train)
 # try some parameters
 w0 = np.zeros(tx.shape[1])
 max_iters = 1000
-gamma = .1 # empirically these gamma values seems to work alright -M
-gamma_sgd = .001
-gamma_logistic = .001
-lambda_ = .1 # I guess the regularization param in ridge doesn't have to be very big for standardized data -M
-lambda_LR = .1  
+gamma = 0.1  # empirically these gamma values seems to work alright -M
+gamma_sgd = 0.001
+gamma_logistic = 0.001
+lambda_ = 0.1  # I guess the regularization param in ridge doesn't have to be very big for standardized data -M
+lambda_LR = 0.1
 
-if debug: # some debug info
+if debug:  # some debug info
     grad = compute_gradient(y_train, tx, w0)
     print("Initial gradient norm:", np.linalg.norm(grad))
 
@@ -33,7 +34,9 @@ w2, loss2 = mean_squared_error_sgd(y_train, tx, w0, max_iters, gamma_sgd)
 w3, loss3 = least_squares(y_train, tx)
 w4, loss4 = ridge_regression(y_train, tx, lambda_)
 w5, loss5 = logistic_regression(y_train, tx, w0, max_iters, gamma_logistic)
-w6, loss6 = reg_logistic_regression(y_train, tx, lambda_LR, w0, max_iters, gamma_logistic)
+w6, loss6 = reg_logistic_regression(
+    y_train, tx, lambda_LR, w0, max_iters, gamma_logistic
+)
 
 
 # if debug : print(, sep = "\n----------------------\n")
