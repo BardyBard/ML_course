@@ -3,6 +3,8 @@
 import csv
 import numpy as np
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # I added max_rows to speed up the loading.
 # It was taking me way too long to load the whole sample and subsample it later.
@@ -118,3 +120,84 @@ def print_result(method_name, loss, w, additional_info=None):
     if additional_info:
         out += f" ({additional_info})"
     print(out)
+
+
+def split_data(x, y, test_size=0.2, random_state=None):
+    """
+    Split arrays into random train and test subsets.
+
+    Args:
+        x (np.array): Feature matrix
+        y (np.array): Target vector
+        test_size (float): Proportion of the dataset to include in the test split
+        random_state (int): Controls the shuffling applied to the data
+
+    Returns:
+        x_train (np.array): Training data
+        x_test (np.array): Test data
+        y_train (np.array): Training labels
+        y_test (np.array): Test labels
+    """
+    if not 0 < test_size < 1:
+        raise ValueError("test_size should be between 0 and 1")
+
+    if len(y.shape) != 1:
+        raise ValueError("y should be a 1-dimensional array")
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError("x and y should have same number of rows")
+
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    n_samples = x.shape[0]
+    indices = np.random.permutation(n_samples)
+    test_size = int(test_size * n_samples)
+
+    test_idx = indices[:test_size]
+    train_idx = indices[test_size:]
+
+    return x[train_idx], x[test_idx], y[train_idx], y[test_idx]
+
+def create_confusion_matrix(y_test_split, y_pred_binary):
+    # Create confusion matrix manually
+    # True Negatives: actual -1, predicted -1
+    tn = np.sum((y_test_split == -1) & (y_pred_binary == -1))
+    # False Positives: actual -1, predicted 1
+    fp = np.sum((y_test_split == -1) & (y_pred_binary == 1))
+    # False Negatives: actual 1, predicted -1
+    fn = np.sum((y_test_split == 1) & (y_pred_binary == -1))
+    # True Positives: actual 1, predicted 1
+    tp = np.sum((y_test_split == 1) & (y_pred_binary == 1))
+
+    return np.array([[tn, fp],
+                   [fn, tp]])
+
+def cm_visualization(cm):
+    """
+    Create and return a visualization of a confusion matrix.
+
+    Args:
+        cm (np.array): 2x2 confusion matrix array containing [TN, FP], [FN, TP]
+
+    Returns:
+        matplotlib.figure.Figure: The generated confusion matrix visualization
+    """
+    # Calculate percentages
+    cm_percent = cm.astype('float') / cm.sum() * 100
+
+    # Create annotations with both counts and percentages
+    annotations = np.empty_like(cm, dtype=object)
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            annotations[i, j] = f'{cm[i, j]}\n({cm_percent[i, j]:.2f}%)'
+
+    # Plot confusion matrix
+    fig = plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=annotations, fmt='', cmap='Blues',
+                xticklabels=['Predicted -1', 'Predicted 1'],
+                yticklabels=['Actual -1', 'Actual 1'])
+    plt.title('Confusion Matrix')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    return fig
