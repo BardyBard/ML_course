@@ -115,3 +115,4 @@ ENV/
 # Data for Project 1
 projects/project1/__pycache__/
 projects/project1/data/dataset/**
+projects/project1/gamma_vs_loss.png
