@@ -264,6 +264,7 @@ def preprocess(x_train):
 
 
 # ---------------- KNN IMPLEMENTATION
+# Built with the help of https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 def get_neighbors(train, test_row, num_neighbors):
     """Find k nearest neighbors using vectorized operations.
 
