@@ -261,3 +261,79 @@ def preprocess(x_train):
     tx = np.hstack((ones, x_train.astype(float)))
     # Done!
     return tx
+
+
+# ---------------- KNN IMPLEMENTATION
+def get_neighbors(train, test_row, num_neighbors):
+    """Find k nearest neighbors using vectorized operations.
+
+    Args:
+        train: numpy array of training data
+        test_row: single test instance
+        num_neighbors: number of neighbors to return
+
+    Returns:
+        numpy array of num_neighbors nearest training instances
+    """
+    # Vectorized distance computation
+    distances = np.sqrt(np.sum((train[:, :-1] - test_row[:-1]) ** 2, axis=1))
+
+    # Get indices of k nearest neighbors
+    nearest_neighbor_indices = np.argsort(distances)[:num_neighbors]
+
+    # Return the k nearest neighbors
+    return train[nearest_neighbor_indices]
+
+
+# def predict_classification(train, test_row, num_neighbors):
+#     """Make a classification prediction with neighbors for a single test instance.
+#
+#     Args:
+#         train: numpy array of training data
+#         test_row: single test instance
+#         num_neighbors: number of neighbors to use
+#
+#     Returns:
+#         prediction for the test instance
+#     """
+#     neighbors = get_neighbors(train, test_row, num_neighbors)
+#     output_values = [row[-1] for row in neighbors]
+#     prediction = max(set(output_values), key=output_values.count)
+#     return prediction
+
+
+def predict_classification_batch(train_features, train_labels, test_features, num_neighbors):
+    """Make classification predictions for multiple test instances using vectorized operations.
+
+    Args:
+        train_features: numpy array of training features (N_train, D)
+        train_labels: numpy array of training labels (N_train,)
+        test_features: numpy array of test features (N_test, D)
+        num_neighbors: number of neighbors to use
+
+    Returns:
+        numpy array of shape (N_test,) containing predictions for all test instances
+    """
+    # Compute distances for all test samples at once
+    # Shape: (N_test, N_train)
+    # Using broadcasting: test_features[:, np.newaxis, :] creates shape (N_test, 1, D)
+    # train_features creates shape (N_train, D) and broadcasts to (N_test, N_train, D)
+    distances = np.sqrt(
+        np.sum((test_features[:, np.newaxis, :] - train_features) ** 2, axis=2))
+
+    # Get indices of k nearest neighbors for each test sample
+    # Shape: (N_test, num_neighbors)
+    nearest_indices = np.argsort(distances, axis=1)[:, :num_neighbors]
+
+    # Get the labels of the k nearest neighbors
+    # Shape: (N_test, num_neighbors)
+    neighbor_labels = train_labels[nearest_indices]
+
+    # For each test sample, find the most common label among its k neighbors
+    predictions = np.array([
+        np.bincount(neighbor_labels[i].astype(int)).argmax()
+        for i in range(len(test_features))
+    ])
+
+    return predictions
+

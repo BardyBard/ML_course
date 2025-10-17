@@ -201,3 +201,36 @@ def cm_visualization(cm):
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
     return fig
+
+def pca_reduction(X, k):
+    """
+    Perform Principal Component Analysis (PCA) dimensionality reduction on the input data.
+
+    Args:
+        X (np.array): Input data matrix of shape (n_samples × n_features)
+        k (int): Number of principal components to keep
+
+    Returns:
+        np.array: Transformed data matrix of shape (n_samples × k) projected onto
+                 the first k principal components
+    """
+    # X: your data as a NumPy array (n_samples × n_features)
+    # 1. Center the data
+    X_centered = X - np.mean(X, axis=0)
+
+    # 2. Compute the covariance matrix
+    cov_matrix = np.cov(X_centered, rowvar=False)
+
+    # 3. Eigen decomposition
+    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+
+    # 4. Sort eigenvalues (and eigenvectors) in descending order
+    idx = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:, idx]
+
+    top_components = eigenvectors[:, :k]
+
+    X_pca = np.dot(X_centered, top_components)
+
+    return X_pca
