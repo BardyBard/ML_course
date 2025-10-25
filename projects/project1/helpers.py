@@ -183,7 +183,7 @@ def create_confusion_matrix(y_test_split, y_pred_binary):
     return np.array([[tn, fp],
                    [fn, tp]])
 
-def cm_visualization(cm):
+def cm_visualization(cm, title = None):
     """
     Create and return a visualization of a confusion matrix.
 
@@ -207,7 +207,8 @@ def cm_visualization(cm):
     sns.heatmap(cm, annot=annotations, fmt='', cmap='Blues',
                 xticklabels=['Predicted -1', 'Predicted 1'],
                 yticklabels=['Actual -1', 'Actual 1'])
-    plt.title('Confusion Matrix')
+    plot_title = "Confusion Matrix "
+    if title is not None:
         plot_title += title
     plt.title(plot_title)
     plt.ylabel('True Label')
