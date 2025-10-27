@@ -73,7 +73,7 @@ def label_enthropy(dataset, verbose = False) -> float:
 Returns information gain for each x from X.
 """
 def IG(D, X) -> dict:
-   
+   min_gain = 1e-3   
    IGs = {}
    ED = label_enthropy(D) # start value for IG
    for i in range(len(X)):
@@ -82,7 +82,9 @@ def IG(D, X) -> dict:
       for v in vals(i, D):
          Dxv = subset(i, v, D)
          cnt -= len(Dxv) * label_enthropy(Dxv) / len(D)
-      IGs[x] = cnt
+      
+      if cnt > min_gain : # skip low information-gain features
+         IGs[x] = cnt
    
    # optional output of information gain at each step
    """
@@ -105,7 +107,7 @@ def id3(D, D_parent, X, y, depth = None, verbose = False):
       v = argmax(count_labels, D_parent) # most common label in parent node
       return Node(v)
    v = argmax(count_labels, D) # most common label in this node
-   if X is None or np.all(D[:, -1] == v) or (depth is not None and depth <= 0):
+   if X is None or len(X) == 0 or np.all(D[:, -1] == v) or (depth is not None and depth <= 0):
       if verbose : print("2nd if", v, depth)
       return Node(v)
    x = argmax(IG, D, X) # most discriminative feature - best splits the dataset
@@ -129,15 +131,13 @@ E.g. for getting all entries that have Istra in 1st column i.e. D_{x0 = Istra}
    feature_ind = 0, feature_value = Istra.
 feature_ind is the index of the feature in the original dataset and is 0-indexed.
 """
-def subset(feature_ind : int, feature_value : str, dataset : List[List[str]]) -> List[List[str]]:
-   return [line for line in dataset if line[feature_ind] == feature_value]
-
+def subset(feature_ind: int, feature_value: str, dataset: np.ndarray) -> np.ndarray:
+    return dataset[dataset[:, feature_ind] == feature_value]
 """
 Returns a set of all possible values of feature x that is in column `ind` of header (0-indexed).
 """
-def vals(ind : int, dataset) -> set:
-   return set(line[ind] for line in dataset)
-   
+def vals(ind: int, dataset: np.ndarray) -> set:
+    return set(dataset[:, ind])
 """
 A decision tree node.
 For creating a leaf, call Node(label).
@@ -196,9 +196,11 @@ class ID3():
    verbose, the toggle for verbose debugging output
    """
    def fit(self, _header : List[str], _dataset : List[List[str]], depth = None, verbose = False):
+      assert(len(_header) == len(_dataset[0]))
       self.header = np.array(_header)
       self.dataset = np.array(_dataset)
-      self.classes = vals(len(self.header)-1, self.dataset)
+      # self.classes = vals(len(self.header)-1, self.dataset)
+      self.classes = set(self.dataset[:, -1])
       self.tree = id3(self.dataset, self.dataset, self.header[:-1], self.classes, depth, verbose) # root of ID3 tree
       # print(self.tree.get_representation())
       
