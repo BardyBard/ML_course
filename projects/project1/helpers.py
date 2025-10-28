@@ -10,7 +10,12 @@ import seaborn as sns
 # It was taking me way too long to load the whole sample and subsample it later.
 # That can be removed when we're done testing. -M
 def load_csv_data(
-    data_path, max_rows=None, max_features=None, NaNstrat=None, sub_sample=False
+    data_path,
+    max_rows=None,
+    max_features=None,
+    NaNstrat=None,
+    sub_sample=False,
+    keep_columns=None
 ):
     """
     This function loads the data and returns the respectinve numpy arrays.
@@ -27,6 +32,18 @@ def load_csv_data(
         train_ids (np.array): ids of training data
         test_ids (np.array): ids of test data
     """
+    import csv, os
+    import numpy as np
+
+    # Load headers
+    with open(os.path.join(data_path, "x_train.csv"), "r") as f:
+        reader = csv.reader(f)
+        headers = next(reader)
+
+    # Skip first column (ID)
+    column_map = [(col, i) for i, col in enumerate(headers[1:])]
+
+    # Load numeric data
     y_train = np.genfromtxt(
         os.path.join(data_path, "y_train.csv"),
         delimiter=",",
@@ -53,7 +70,12 @@ def load_csv_data(
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
-    # remove duplicate rows
+    # If keep_columns specified, filter to those only
+    if keep_columns:
+        keep_indices = [i for (col, i) in column_map if col in keep_columns]
+        column_map = [(col, idx) for idx, col in enumerate(keep_columns)]
+        x_train = x_train[:, keep_indices]
+        x_test = x_test[:, keep_indices]
 
     # sub-sample
     if sub_sample:  # unused
@@ -61,8 +83,10 @@ def load_csv_data(
         x_train = x_train[::50]
         train_ids = train_ids[::50]
 
-    if max_features:
+    if max_features and not keep_columns:
         x_train = x_train[:, :max_features]
+        x_test = x_test[:, :max_features]
+        column_map = column_map[:max_features]
 
     if max_rows:
         y_train = y_train[:max_rows]
@@ -73,7 +97,8 @@ def load_csv_data(
         # remove all columns that contain only NaNs
         NaNcols = ~np.all(np.isnan(x_train), axis=0)
         x_train = x_train[:, NaNcols]
-        # temporary solution: fill NaNs with column mean
+        column_map = [col for i, col in enumerate(column_map) if NaNcols[i]]
+
         col_means = np.nanmean(x_train, axis=0)
         NaNrows = np.where(np.isnan(x_train))
         x_train[NaNrows] = np.take(col_means, NaNrows[1])
