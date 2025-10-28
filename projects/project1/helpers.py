@@ -259,3 +259,22 @@ def pca_reduction(X, k):
     X_pca = np.dot(X_centered, top_components)
 
     return X_pca
+
+
+def balance_dataset(x, y, train_ids, neg_pos_ratio, seed=45):
+    pos_ids = np.where(y == 1)[0]
+    neg_ids = np.where(y == -1)[0]
+    no_positives = len(pos_ids)
+    no_negs = len(neg_ids)
+    print(f"there are {no_positives} positive samples in the dataset")
+    if no_negs / no_positives < neg_pos_ratio:
+        return x, y  # unchanged
+    target_negs = int(no_positives * neg_pos_ratio)
+    # permute the data randomly
+    if seed is None:
+        seed = 45
+    np.random.seed(seed)
+    neg_ids_sampled = np.random.choice(neg_ids, size=target_negs, replace=False)
+
+    balanced_ids = np.concatenate([pos_ids, neg_ids_sampled])
+    return x[balanced_ids], y[balanced_ids], train_ids[balanced_ids]
