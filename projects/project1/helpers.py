@@ -97,7 +97,6 @@ def load_csv_data(
         # remove all columns that contain only NaNs
         NaNcols = ~np.all(np.isnan(x_train), axis=0)
         x_train = x_train[:, NaNcols]
-        column_map = [col for i, col in enumerate(column_map) if NaNcols[i]]
 
         col_means = np.nanmean(x_train, axis=0)
         NaNrows = np.where(np.isnan(x_train))
@@ -261,7 +260,7 @@ def pca_reduction(X, k):
     return X_pca
 
 
-def balance_dataset(x, y, train_ids, neg_pos_ratio, seed=45):
+def balance_dataset(x, y, neg_pos_ratio, seed=45):
     pos_ids = np.where(y == 1)[0]
     neg_ids = np.where(y == -1)[0]
     no_positives = len(pos_ids)
@@ -277,4 +276,4 @@ def balance_dataset(x, y, train_ids, neg_pos_ratio, seed=45):
     neg_ids_sampled = np.random.choice(neg_ids, size=target_negs, replace=False)
 
     balanced_ids = np.concatenate([pos_ids, neg_ids_sampled])
-    return x[balanced_ids], y[balanced_ids], train_ids[balanced_ids]
+    return x[balanced_ids], y[balanced_ids]
