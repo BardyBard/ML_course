@@ -15,7 +15,8 @@ def load_csv_data(
     max_features=None,
     NaNstrat=None,
     sub_sample=False,
-    keep_columns=None
+    keep_columns=None,
+    remove_columns=None
 ):
     """
     This function loads the data and returns the respectinve numpy arrays.
@@ -76,13 +77,20 @@ def load_csv_data(
         x_train = x_train[:, keep_indices]
         x_test = x_test[:, keep_indices]
 
+    # Remove specified columns
+    elif remove_columns:
+        remove_indices = [i for (col, i) in column_map if col in remove_columns]
+        keep_indices = [i for (col, i) in column_map if i not in remove_indices]
+        x_train = x_train[:, keep_indices]
+        x_test = x_test[:, keep_indices]
+
     # sub-sample
     if sub_sample:  # unused
         y_train = y_train[::50]
         x_train = x_train[::50]
         train_ids = train_ids[::50]
 
-    if max_features and not keep_columns:
+    if max_features and not (keep_columns or remove_columns):
         x_train = x_train[:, :max_features]
         x_test = x_test[:, :max_features]
 
