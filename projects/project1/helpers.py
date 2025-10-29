@@ -73,7 +73,6 @@ def load_csv_data(
     # If keep_columns specified, filter to those only
     if keep_columns:
         keep_indices = [i for (col, i) in column_map if col in keep_columns]
-        column_map = [(col, idx) for idx, col in enumerate(keep_columns)]
         x_train = x_train[:, keep_indices]
         x_test = x_test[:, keep_indices]
 
@@ -86,7 +85,6 @@ def load_csv_data(
     if max_features and not keep_columns:
         x_train = x_train[:, :max_features]
         x_test = x_test[:, :max_features]
-        column_map = column_map[:max_features]
 
     if max_rows:
         y_train = y_train[:max_rows]
