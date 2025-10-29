@@ -107,18 +107,10 @@ def least_squares(y, tx):
     Returns:
         (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
-    # Proceed carefully: naive impletentaion is ill-conditioned.
-    # Let np.linalg.solve do the hard work.
-    # Note: tx.T @ tx seems to be singular, which is a problem for np.linalg.solve.
-    # There are multiple ways to combat this:
-    # - removing linearly dependent rows and columns
-    # - adding regularization; but that would be equivalent to ridge/lasso
-    # I suggest we try fixing it in the 1st way, but will check with the TA's as well. -M
-
+    # Proceed carefully: naive impletentaion is ill-conditioned. Edit: solved by pseudoinverse.
     M = tx.T @ tx
     b = tx.T @ y
     w = np.linalg.pinv(M) @ b
-    # w = np.linalg.solve(M, b)
     loss = compute_loss(y, tx, w)
     return w, loss
 

@@ -6,9 +6,6 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# I added max_rows to speed up the loading.
-# It was taking me way too long to load the whole sample and subsample it later.
-# That can be removed when we're done testing. -M
 def load_csv_data(
     data_path,
     max_rows=None,
@@ -79,18 +76,20 @@ def load_csv_data(
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
-    # Optional: NaN strategy (unchanged)
+    # Custom: what to do with NaNs 
     if NaNstrat:
         x_train = removeNaNs(x_train)
         x_test = removeNaNs(x_test)
 
-    # print("shapes", x_train.shape, x_test.shape, y_train.shape)
-    # assert x_train.shape == x_test.shape
     return x_train, x_test, y_train, train_ids, test_ids
 
 def removeNaNs(x):
     """
-    x (np.array): data from which NaNs should be removed
+    Replace NaN values in the dataset with column means.
+    Args:
+        x: numpy array of shape=(N, D), dataset possibly containing NaN values.
+    Returns:
+        x: numpy array of shape=(N, D) with NaN values replaced by corresponding column means.
     """
     # NaNcols = ~np.all(np.isnan(x), axis=0)
     # x = x[:, NaNcols]
@@ -287,15 +286,30 @@ def pca_transform(X, X_mean, top_components):
 
 
 def balance_dataset(x, y, neg_pos_ratio, seed=45):
+    """
+    Balance a (binary) dataset to achieve at most the defined negative-to-positive ratio.
+    If the dataset is such that this is impossible, it will be returned unchanged.
+    Args:
+        x: numpy array of shape=(N, D), feature matrix.
+        y: numpy array of shape=(N, ), label vector with values {1, -1}.
+        neg_pos_ratio: float, maximum allowed ratio of negative to positive samples.
+        seed: int, optional (default=45). Random seed for reproducibility.
+    Returns:
+        x_balanced: numpy array, balanced subset of x.
+        y_balanced: numpy array, corresponding balanced subset of y.
+    Notes:
+        - Keeps all positive samples and randomly downsamples negatives.
+        - If dataset already satisfies the ratio, returns it unchanged.
+    """
     pos_ids = np.where(y == 1)[0]
     neg_ids = np.where(y == -1)[0]
     no_positives = len(pos_ids)
     no_negs = len(neg_ids)
     #print(f"there are {no_positives} positive samples in the dataset")
     if no_negs / no_positives < neg_pos_ratio:
-        return x, y  # unchanged
-    target_negs = int(no_positives * neg_pos_ratio)
-    # permute the data randomly
+        return x, y  # return x,y unchanged
+    target_negs = int(no_positives * neg_pos_ratio) # this is the amount of negative examples we want
+    # permute the data randomly before returning
     if seed is None:
         seed = 45
     np.random.seed(seed)
@@ -322,7 +336,12 @@ def kfold_inds(n_samples : int, k : int, seed=42):
     """
     Returns start and (exclusive) end indices of k folds on n_samples samples.
     Any remainder is added to the last fold.
-    Returns: a list of pairs (2-element lists) of start and end indices respectively.
+    Args:
+        n_samples: int, total number of samples in the dataset.
+        k: int, number of folds to divide the dataset into.
+        seed: int, optional (default=42). Random seed for reproducibility.
+    Returns:
+        inds: list of [start, end] pairs defining index ranges for each fold.
     """
     np.random.seed(seed)
     inds = []
@@ -336,11 +355,24 @@ def metric(true_ys, predictions):
     """
     The metric we use to decide which model hyperparameters we use. 
     Currently, F1 score is implemented.
+    Args:
+        true_ys: list or numpy array, true labels.
+        predictions: list or numpy array, predicted labels.
+    Returns:
+        score: float, F1 score between true and predicted labels.
     """
     return F1(true_ys, predictions)
 
 def F1(true_ys, predictions):
-    # Reformat
+    """
+    Compute the F1 score for binary classification.
+    Args:
+        true_ys: list or numpy array of shape=(N, ), true labels in {1, -1}.
+        predictions: list or numpy array of shape=(N, ), predicted labels in {1, -1}.
+    Returns:
+        f1: float, harmonic mean of precision and recall.
+    """
+    # Reformat fields
     y_true = np.array(true_ys, dtype=int).ravel()
     y_pred = np.array(predictions, dtype=int).ravel()
 
