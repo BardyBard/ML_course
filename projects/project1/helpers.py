@@ -98,9 +98,9 @@ def load_csv_data(
         NaNcols = ~np.all(np.isnan(x_train), axis=0)
         x_train = x_train[:, NaNcols]
 
-        col_means = np.nanmean(x_train, axis=0)
+        col_medians = np.nanmedian(x_train, axis=0)
         NaNrows = np.where(np.isnan(x_train))
-        x_train[NaNrows] = np.take(col_means, NaNrows[1])
+        x_train[NaNrows] = np.take(col_medians, NaNrows[1])
 
     return x_train, x_test, y_train, train_ids, test_ids
 
@@ -265,7 +265,7 @@ def balance_dataset(x, y, neg_pos_ratio, seed=45):
     neg_ids = np.where(y == -1)[0]
     no_positives = len(pos_ids)
     no_negs = len(neg_ids)
-    print(f"there are {no_positives} positive samples in the dataset")
+    #print(f"there are {no_positives} positive samples in the dataset")
     if no_negs / no_positives < neg_pos_ratio:
         return x, y  # unchanged
     target_negs = int(no_positives * neg_pos_ratio)
@@ -277,3 +277,16 @@ def balance_dataset(x, y, neg_pos_ratio, seed=45):
 
     balanced_ids = np.concatenate([pos_ids, neg_ids_sampled])
     return x[balanced_ids], y[balanced_ids]
+
+def calculate_f1(cm):
+    tn, fp, fn, tp = cm.ravel()
+
+    # Avoid division by zero
+    precision = tp / (tp + fp) if (tp + fp) != 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) != 0 else 0.0
+
+    # Avoid invalid F1 when both precision and recall are zero
+    if (precision + recall) == 0:
+        return 0.0
+
+    return 2 * (precision * recall) / (precision + recall)
