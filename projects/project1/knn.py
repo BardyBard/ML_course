@@ -58,13 +58,9 @@ def predict_classification_batch(train_features, train_labels, test_features, nu
 
     return predictions
 
-def knn_predict_streaming(train_X, y_int, test_X, k,
-                          test_batch=1024, train_block=4096):
+def knn_predict_streaming(train_X, y_int, test_X, k, test_batch=1024, train_block=4096):
     """
-    Memory-efficient exact KNN classification.
-    - No (N_test x N_train x D) broadcast
-    - Processes test and train in blocks
-    - Uses squared distances via norms + GEMM
+    Memory-efficient streaming KNN classification.
     """
     N_train = train_X.shape[0]
     N_test  = test_X.shape[0]
@@ -76,16 +72,16 @@ def knn_predict_streaming(train_X, y_int, test_X, k,
         t1 = min(t0 + test_batch, N_test)
         Xb = test_X[t0:t1]                                  # (B, D)
         B = Xb.shape[0]
-        Xb_norm = np.einsum('ij,ij->i', Xb, Xb)             # (B,)
+        Xb_norm = np.sum(Xb * Xb, axis=1)
 
-        # running top-k (best distances and indices) per test row
+        # initialize best distances/indices
         best_d = np.full((B, k), np.inf, dtype=Xb.dtype)
         best_i = np.full((B, k), -1, dtype=np.int64)
 
         for s0 in range(0, N_train, train_block):
             s1 = min(s0 + train_block, N_train)
-            Yb = train_X[s0:s1]                              # (T, D)
-            Yb_norm = np.einsum('ij,ij->i', Yb, Yb)
+            Yb = train_X[s0:s1]
+            Yb_norm = np.sum(Yb * Yb, axis=1)
 
             # squared distances via ||x||^2 + ||y||^2 - 2 x·y
             # allocates only a (B x T) matrix, no third dim
@@ -101,7 +97,7 @@ def knn_predict_streaming(train_X, y_int, test_X, k,
             local_d = np.take_along_axis(d2, part_idx, axis=1)
             local_i = part_idx + s0
 
-            # merge current best with local best (size 2k) and keep k
+            # merge with running best
             merged_d = np.concatenate([best_d, local_d], axis=1)
             merged_i = np.concatenate([best_i, local_i], axis=1)
             sel = np.argpartition(merged_d, k-1, axis=1)[:, :k]
