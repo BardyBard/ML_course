@@ -262,6 +262,7 @@ def preprocess_unstructural(x_train):
     # Standardize
     x_mean = np.nanmean(x_train, axis=0)
     x_std = np.nanstd(x_train, axis=0)
+    x_std[x_std == 0] = 1
     x_train = (x_train - x_mean) / x_std
     # Clip extreme outliers
     x_train = np.clip(x_train, -5, 5)
