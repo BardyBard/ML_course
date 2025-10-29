@@ -10,7 +10,11 @@ import seaborn as sns
 # It was taking me way too long to load the whole sample and subsample it later.
 # That can be removed when we're done testing. -M
 def load_csv_data(
-    data_path, max_rows=None, max_features=None, NaNstrat=None, sub_sample=False
+    data_path,
+    max_rows=None,
+    NaNstrat=None,
+    keep_columns=None,
+    remove_columns=None
 ):
     """
     This function loads the data and returns the respectinve numpy arrays.
@@ -27,52 +31,59 @@ def load_csv_data(
         train_ids (np.array): ids of training data
         test_ids (np.array): ids of test data
     """
-    y_train = np.genfromtxt(
-        os.path.join(data_path, "y_train.csv"),
-        delimiter=",",
-        skip_header=1,
-        dtype=int,
-        usecols=1,
-        max_rows=max_rows,
-    )
+    # 1) Read header once
+    with open(os.path.join(data_path, "x_train.csv"), "r", newline="") as f:
+        reader = csv.reader(f)
+        headers = next(reader)
+
+    feature_names = headers[1:]  # after ID
+    # 2) Compute columns to keep at parse time (not after)
+    if keep_columns:
+        keep_feature_idx = [i for i, col in enumerate(feature_names) if col in set(keep_columns)]
+    else:
+        remove = set(remove_columns or [])
+        keep_feature_idx = [i for i, col in enumerate(feature_names) if col not in remove]
+
+    # CSV indices to read: ID column (0) + selected features (offset by +1 because of ID)
+    x_usecols = [0] + [i + 1 for i in keep_feature_idx]
+
+    # 3) Parse only those columns; float32 is plenty for most ML and faster
     x_train = np.genfromtxt(
         os.path.join(data_path, "x_train.csv"),
         delimiter=",",
         skip_header=1,
         max_rows=max_rows,
+        usecols=x_usecols,
+        dtype=np.float32,
     )
     x_test = np.genfromtxt(
         os.path.join(data_path, "x_test.csv"),
         delimiter=",",
         skip_header=1,
         max_rows=max_rows,
+        usecols=x_usecols,
+        dtype=np.float32,
+    )
+    y_train = np.genfromtxt(
+        os.path.join(data_path, "y_train.csv"),
+        delimiter=",",
+        skip_header=1,
+        usecols=1,
+        max_rows=max_rows,
+        dtype=np.int32,
     )
 
-    train_ids = x_train[:, 0].astype(dtype=int)
-    test_ids = x_test[:, 0].astype(dtype=int)
+    # 4) Split IDs / features without extra copies
+    train_ids = x_train[:, 0].astype(np.int64, copy=False)
+    test_ids = x_test[:, 0].astype(np.int64, copy=False)
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
-    # remove duplicate rows
-
-    # sub-sample
-    if sub_sample:  # unused
-        y_train = y_train[::50]
-        x_train = x_train[::50]
-        train_ids = train_ids[::50]
-
-    if max_features:
-        x_train = x_train[:, :max_features]
-
-    if max_rows:
-        y_train = y_train[:max_rows]
-        x_train = x_train[:max_rows]
-        train_ids = train_ids[:max_rows]
-
+    # Optional: NaN strategy (unchanged)
     if NaNstrat:
         x_train = removeNaNs(x_train)
         x_test = removeNaNs(x_test)
-        
+
     # print("shapes", x_train.shape, x_test.shape, y_train.shape)
     # assert x_train.shape == x_test.shape
     return x_train, x_test, y_train, train_ids, test_ids
@@ -273,3 +284,35 @@ def pca_transform(X, X_mean, top_components):
     X_centered = X - X_mean
     X_reduced = np.dot(X_centered, top_components)
     return X_reduced
+
+
+def balance_dataset(x, y, neg_pos_ratio, seed=45):
+    pos_ids = np.where(y == 1)[0]
+    neg_ids = np.where(y == -1)[0]
+    no_positives = len(pos_ids)
+    no_negs = len(neg_ids)
+    #print(f"there are {no_positives} positive samples in the dataset")
+    if no_negs / no_positives < neg_pos_ratio:
+        return x, y  # unchanged
+    target_negs = int(no_positives * neg_pos_ratio)
+    # permute the data randomly
+    if seed is None:
+        seed = 45
+    np.random.seed(seed)
+    neg_ids_sampled = np.random.choice(neg_ids, size=target_negs, replace=False)
+
+    balanced_ids = np.concatenate([pos_ids, neg_ids_sampled])
+    return x[balanced_ids], y[balanced_ids]
+
+def calculate_f1(cm):
+    tn, fp, fn, tp = cm.ravel()
+
+    # Avoid division by zero
+    precision = tp / (tp + fp) if (tp + fp) != 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) != 0 else 0.0
+
+    # Avoid invalid F1 when both precision and recall are zero
+    if (precision + recall) == 0:
+        return 0.0
+
+    return 2 * (precision * recall) / (precision + recall)
