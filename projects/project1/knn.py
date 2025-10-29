@@ -1,3 +1,5 @@
+import numpy as np
+
 # ---------------- KNN IMPLEMENTATION
 # Built with the help of https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 def get_neighbors(train, test_row, num_neighbors):
@@ -56,39 +58,18 @@ def predict_classification_batch(train_features, train_labels, test_features, nu
 
     return predictions
 
-def knn_predict_streaming(train_X, train_y, test_X, k,
-                          test_batch=1024, train_block=4096,
-                          as_float32=True):
+def knn_predict_streaming(train_X, y_int, test_X, k,
+                          test_batch=1024, train_block=4096):
     """
     Memory-efficient exact KNN classification.
     - No (N_test x N_train x D) broadcast
     - Processes test and train in blocks
     - Uses squared distances via norms + GEMM
     """
-    if as_float32:
-        train_X = np.asarray(train_X, dtype=np.float32, order="C")
-        test_X  = np.asarray(test_X,  dtype=np.float32, order="C")
-    else:
-        train_X = np.ascontiguousarray(train_X)
-        test_X  = np.ascontiguousarray(test_X)
-
-    # ensure labels are ints for bincount
-    train_y = np.asarray(train_y)
-    if not np.issubdtype(train_y.dtype, np.integer):
-        # map arbitrary labels to 0..C-1
-        uniq, inv = np.unique(train_y, return_inverse=True)
-        y_int = inv.astype(np.int64)
-        to_label = uniq
-    else:
-        y_int = train_y.astype(np.int64, copy=False)
-        to_label = None
-
     N_train = train_X.shape[0]
     N_test  = test_X.shape[0]
-    k = int(k)
 
     # Precompute train squared norms once
-    train_norm = np.einsum('ij,ij->i', train_X, train_X)
     preds = np.empty(N_test, dtype=np.int64)
 
     for t0 in range(0, N_test, test_batch):
@@ -104,7 +85,7 @@ def knn_predict_streaming(train_X, train_y, test_X, k,
         for s0 in range(0, N_train, train_block):
             s1 = min(s0 + train_block, N_train)
             Yb = train_X[s0:s1]                              # (T, D)
-            Yb_norm = train_norm[s0:s1]                      # (T,)
+            Yb_norm = np.einsum('ij,ij->i', Yb, Yb)
 
             # squared distances via ||x||^2 + ||y||^2 - 2 x·y
             # allocates only a (B x T) matrix, no third dim
@@ -133,7 +114,28 @@ def knn_predict_streaming(train_X, train_y, test_X, k,
         for r in range(B):
             preds[t0 + r] = np.bincount(neigh_labels[r]).argmax()
 
-    # map back to original labels if needed
-    if to_label is not None:
-        return to_label[preds]
     return preds
+
+from helpers import *
+from implementations import *
+import time
+x_train, x_test, y_train, train_ids, test_ids = load_csv_data("data/dataset", max_rows=1000, NaNstrat="fill", remove_columns=None)
+
+tx, mask = preprocess_structural(x_train, ones=False)
+tx = preprocess_unstructural(tx)
+
+x_test = x_test[:, mask]
+x_test = preprocess_unstructural(x_test)
+
+np.random.seed(42)
+tx_reduced = pca_reduction(tx, 50)
+tx_train_split, tx_test_split, y_train_split, y_test_split = split_data(tx_reduced, y_train)
+tx_train_split_balanced, y_train_split_balanced = balance_dataset(tx_train_split, y_train_split, 2)
+y_train_split_balanced = np.where(y_train_split_balanced == -1, 0, y_train_split_balanced)
+start = time.perf_counter()
+predictions = knn_predict_streaming(tx_train_split_balanced, y_train_split_balanced, tx_test_split, 16)
+end = time.perf_counter()
+predictions = np.where(predictions == 0, -1, predictions)
+cm = create_confusion_matrix(y_test_split, predictions)
+print(calculate_f1(cm))
+print(f"Execution time: {end - start:.6f} seconds")
