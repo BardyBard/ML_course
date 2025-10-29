@@ -12,9 +12,7 @@ import seaborn as sns
 def load_csv_data(
     data_path,
     max_rows=None,
-    max_features=None,
     NaNstrat=None,
-    sub_sample=False,
     keep_columns=None,
     remove_columns=None
 ):
@@ -33,80 +31,61 @@ def load_csv_data(
         train_ids (np.array): ids of training data
         test_ids (np.array): ids of test data
     """
-    import csv, os
-    import numpy as np
-
-    # Load headers
-    with open(os.path.join(data_path, "x_train.csv"), "r") as f:
+    # 1) Read header once
+    with open(os.path.join(data_path, "x_train.csv"), "r", newline="") as f:
         reader = csv.reader(f)
         headers = next(reader)
 
-    # Skip first column (ID)
-    column_map = [(col, i) for i, col in enumerate(headers[1:])]
+    feature_names = headers[1:]  # after ID
+    # 2) Compute columns to keep at parse time (not after)
+    if keep_columns:
+        keep_feature_idx = [i for i, col in enumerate(feature_names) if col in set(keep_columns)]
+    else:
+        remove = set(remove_columns or [])
+        keep_feature_idx = [i for i, col in enumerate(feature_names) if col not in remove]
 
-    # Load numeric data
-    y_train = np.genfromtxt(
-        os.path.join(data_path, "y_train.csv"),
-        delimiter=",",
-        skip_header=1,
-        dtype=int,
-        usecols=1,
-        max_rows=max_rows,
-    )
+    # CSV indices to read: ID column (0) + selected features (offset by +1 because of ID)
+    x_usecols = [0] + [i + 1 for i in keep_feature_idx]
+
+    # 3) Parse only those columns; float32 is plenty for most ML and faster
     x_train = np.genfromtxt(
         os.path.join(data_path, "x_train.csv"),
         delimiter=",",
         skip_header=1,
         max_rows=max_rows,
+        usecols=x_usecols,
+        dtype=np.float32,
     )
     x_test = np.genfromtxt(
         os.path.join(data_path, "x_test.csv"),
         delimiter=",",
         skip_header=1,
         max_rows=max_rows,
+        usecols=x_usecols,
+        dtype=np.float32,
+    )
+    y_train = np.genfromtxt(
+        os.path.join(data_path, "y_train.csv"),
+        delimiter=",",
+        skip_header=1,
+        usecols=1,
+        max_rows=max_rows,
+        dtype=np.int32,
     )
 
-    train_ids = x_train[:, 0].astype(dtype=int)
-    test_ids = x_test[:, 0].astype(dtype=int)
+    # 4) Split IDs / features without extra copies
+    train_ids = x_train[:, 0].astype(np.int64, copy=False)
+    test_ids = x_test[:, 0].astype(np.int64, copy=False)
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
-    # If keep_columns specified, filter to those only
-    if keep_columns:
-        keep_indices = [i for (col, i) in column_map if col in keep_columns]
-        x_train = x_train[:, keep_indices]
-        x_test = x_test[:, keep_indices]
-
-    # Remove specified columns
-    elif remove_columns:
-        remove_indices = [i for (col, i) in column_map if col in remove_columns]
-        keep_indices = [i for (col, i) in column_map if i not in remove_indices]
-        x_train = x_train[:, keep_indices]
-        x_test = x_test[:, keep_indices]
-
-    # sub-sample
-    if sub_sample:  # unused
-        y_train = y_train[::50]
-        x_train = x_train[::50]
-        train_ids = train_ids[::50]
-
-    if max_features and not (keep_columns or remove_columns):
-        x_train = x_train[:, :max_features]
-        x_test = x_test[:, :max_features]
-
-    if max_rows:
-        y_train = y_train[:max_rows]
-        x_train = x_train[:max_rows]
-        train_ids = train_ids[:max_rows]
-
+    # Optional: NaN strategy (unchanged)
     if NaNstrat:
-        # remove all columns that contain only NaNs
-        NaNcols = ~np.all(np.isnan(x_train), axis=0)
-        x_train = x_train[:, NaNcols]
-
-        col_medians = np.nanmedian(x_train, axis=0)
-        NaNrows = np.where(np.isnan(x_train))
-        x_train[NaNrows] = np.take(col_medians, NaNrows[1])
+        mask = ~np.all(np.isnan(x_train), axis=0)
+        x_train = x_train[:, mask]
+        med = np.nanmedian(x_train, axis=0)
+        rr = np.where(np.isnan(x_train))
+        x_train[rr] = np.take(med, rr[1])
 
     return x_train, x_test, y_train, train_ids, test_ids
 
