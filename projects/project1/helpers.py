@@ -244,6 +244,32 @@ def pca_reduction(X, k):
 
     return X_pca
 
+def pca_fit(X, k):
+    """
+    Fit PCA on training data and return the transformation components.
+    """
+    X_mean = np.mean(X, axis=0)
+    X_centered = X - X_mean
+
+    cov_matrix = np.cov(X_centered, rowvar=False)
+    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+    idx = np.argsort(eigenvalues)[::-1]
+    eigenvectors = eigenvectors[:, idx]
+    top_components = eigenvectors[:, :k]
+
+    X_reduced = np.dot(X_centered, top_components)
+
+    return X_reduced, X_mean, top_components
+
+
+def pca_transform(X, X_mean, top_components):
+    """
+    Apply a fitted PCA transformation to new data.
+    """
+    X_centered = X - X_mean
+    X_reduced = np.dot(X_centered, top_components)
+    return X_reduced
+
 
 def balance_dataset(x, y, neg_pos_ratio, seed=45):
     pos_ids = np.where(y == 1)[0]
