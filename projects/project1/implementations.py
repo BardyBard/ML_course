@@ -246,6 +246,7 @@ def preprocess(x_train):
 
     Returns:
         tx: numpy array of shape (N, D'), where D' <= D + 1
+        mask: 0-1 numpy array of shape (, D'), which columns were kept
     """
     # Remove 0-variance columns
     mask = x_train.std(axis=0) != 0
@@ -260,7 +261,7 @@ def preprocess(x_train):
     ones = np.ones((len(x_train), 1), dtype=float)
     tx = np.hstack((ones, x_train.astype(float)))
     # Done!
-    return tx
+    return tx, mask
 
 
 # ---------------- KNN IMPLEMENTATION

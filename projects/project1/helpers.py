@@ -81,13 +81,25 @@ def load_csv_data(
 
     # Optional: NaN strategy (unchanged)
     if NaNstrat:
-        mask = ~np.all(np.isnan(x_train), axis=0)
-        x_train = x_train[:, mask]
-        med = np.nanmedian(x_train, axis=0)
-        rr = np.where(np.isnan(x_train))
-        x_train[rr] = np.take(med, rr[1])
+        x_train = removeNaNs(x_train)
+        x_test = removeNaNs(x_test)
 
+    # print("shapes", x_train.shape, x_test.shape, y_train.shape)
+    # assert x_train.shape == x_test.shape
     return x_train, x_test, y_train, train_ids, test_ids
+
+def removeNaNs(x):
+    """
+    x (np.array): data from which NaNs should be removed
+    """
+    # NaNcols = ~np.all(np.isnan(x), axis=0)
+    # x = x[:, NaNcols]
+    x[:, np.all(np.isnan(x), axis=0)] = 0
+    # temporary solution: fill NaNs with column mean
+    col_means = np.nanmean(x, axis=0)
+    NaNrows = np.where(np.isnan(x))
+    x[NaNrows] = np.take(col_means, NaNrows[1])
+    return x
 
 
 def create_csv_submission(ids, y_pred, name):
@@ -182,7 +194,7 @@ def create_confusion_matrix(y_test_split, y_pred_binary):
     return np.array([[tn, fp],
                    [fn, tp]])
 
-def cm_visualization(cm):
+def cm_visualization(cm, title = None):
     """
     Create and return a visualization of a confusion matrix.
 
@@ -206,7 +218,10 @@ def cm_visualization(cm):
     sns.heatmap(cm, annot=annotations, fmt='', cmap='Blues',
                 xticklabels=['Predicted -1', 'Predicted 1'],
                 yticklabels=['Actual -1', 'Actual 1'])
-    plt.title('Confusion Matrix')
+    plot_title = "Confusion Matrix "
+    if title is not None:
+        plot_title += title
+    plt.title(plot_title)
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
     return fig
