@@ -232,7 +232,7 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     return logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_)
 
 
-def preprocess(x_train):
+def preprocess_structural(x_train, ones = True):
     """
     Preprocess training data (no test data yet).
     In particular this means:
@@ -250,19 +250,22 @@ def preprocess(x_train):
     """
     # Remove 0-variance columns
     mask = x_train.std(axis=0) != 0
-    x_train = x_train[:, mask]
+    tx = x_train[:, mask]
+    if ones:
+        # Prepend the 1s column
+        ones = np.ones((len(x_train), 1), dtype=float)
+        tx = np.hstack((ones, x_train.astype(float)))
+
+    return tx, mask
+
+def preprocess_unstructural(x_train):
     # Standardize
     x_mean = np.nanmean(x_train, axis=0)
     x_std = np.nanstd(x_train, axis=0)
     x_train = (x_train - x_mean) / x_std
     # Clip extreme outliers
     x_train = np.clip(x_train, -5, 5)
-    # Prepend the 1s column
-    ones = np.ones((len(x_train), 1), dtype=float)
-    tx = np.hstack((ones, x_train.astype(float)))
-    # Done!
-    return tx, mask
-
+    return x_train
 
 # ---------------- KNN IMPLEMENTATION
 # Built with the help of https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
