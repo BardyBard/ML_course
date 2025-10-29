@@ -316,3 +316,43 @@ def calculate_f1(cm):
         return 0.0
 
     return 2 * (precision * recall) / (precision + recall)
+
+
+def kfold_inds(n_samples : int, k : int, seed=42):
+    """
+    Returns start and (exclusive) end indices of k folds on n_samples samples.
+    Any remainder is added to the last fold.
+    Returns: a list of pairs (2-element lists) of start and end indices respectively.
+    """
+    np.random.seed(seed)
+    inds = []
+    
+    for i in range(k):
+        inds.append([n_samples//k * i, n_samples//k * (i+1)])
+    inds[-1][1] = n_samples # add the rest to the last fold
+    return inds
+
+def metric(true_ys, predictions): 
+    """
+    The metric we use to decide which model hyperparameters we use. 
+    Currently, F1 score is implemented.
+    """
+    return F1(true_ys, predictions)
+
+def F1(true_ys, predictions):
+    # Reformat
+    y_true = np.array(true_ys, dtype=int).ravel()
+    y_pred = np.array(predictions, dtype=int).ravel()
+
+    # Compute confusion terms
+    tp = np.sum((y_pred == 1) & (y_true == 1))
+    fp = np.sum((y_pred == 1) & (y_true == -1))
+    fn = np.sum((y_pred == -1) & (y_true == 1))
+
+    # Precision, recall, F1
+    epsilon = 1e-10 # for fixing numerical issues
+    precision = tp / (tp + fp + epsilon) 
+    recall = tp / (tp + fn + epsilon)
+    f1 = 2 * precision * recall / (precision + recall + epsilon)
+
+    return f1

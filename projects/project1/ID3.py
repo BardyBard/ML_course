@@ -1,9 +1,27 @@
 from typing import List
 from math import log2
 import numpy as np
+from helpers import *
+
+"""
+This file contains all helper functions used by the ID3 decision tree model, called from run.py.
+"""
+
+def ID3_format(x, y):
+   """
+   Format the test data for the ID3 function.
+   Params:
+   x 
+   """
+   # we got rid of feature names in preprocess and I don't want to change that code so I assign some names here
+   dummy_header = np.array([f"col{i}" for i in range(x.shape[1])] + ["label"]) 
+   train_data = np.hstack((x, y)) # paste x and y together to comply to ID3 method's format
+   return dummy_header, train_data
 
 def compute_bins(dataset: np.ndarray, k: int = 5):
-   """Compute bin edges for each numeric column (excluding label)."""
+   """
+   Compute bin edges for each numeric column (excluding label).
+   """
    n_rows, n_cols = dataset.shape
    bin_edges = []
    for j in range(n_cols):
@@ -69,10 +87,11 @@ def label_enthropy(dataset, verbose = False) -> float:
    
    return ret
 
-"""
-Returns information gain for each x from X.
-"""
+
 def IG(D, X) -> dict:
+   """
+   Returns information gain for each x from X.
+   """
    min_gain = 1e-3   
    IGs = {}
    ED = label_enthropy(D) # start value for IG
@@ -95,13 +114,14 @@ def IG(D, X) -> dict:
    
    return IGs
 
-"""
-X - all features (header without goal)
-y - label
-D - dataset
-Set verbose = True for debug output.
-"""
+
 def id3(D, D_parent, X, y, depth = None, verbose = False):
+   """
+   X - all features (header without goal)
+   y - label
+   D - dataset
+   Set verbose = True for debug output.
+   """
    if D is None:
       if verbose : print("1st if")
       v = argmax(count_labels, D_parent) # most common label in parent node
@@ -240,4 +260,98 @@ class ID3():
    def test(self):
       pass
 
+
+
+def test_hyperparams(x_train, y_train, max_depth: int, k=3, seed = 42, subsample_size = 3000):
+   """
+   A helper function that finds the best depth for the ID3 tree using a specified metric.
+   It does so by doing k-fold cross validation, calculating the metric (here, F1-score) on the
+   mini-train and mini-test data, and calculating the mean metric (here, mean F1). This is repeated
+   for tree depths 1..max_depth. 
+   The seed parameter is used to permute the data randomly before doing cross validation.
+   The function also takes an optional parameter subsample_size which enables it to pick a random subset
+   (using seed) to use when doing cross-validation for faster evaluation.
+   Params:
+   x_train
+   y_train
+   max_depth - max depth of ID3 tree
+   k - number of folds in k-fold cross validation, where the default value is 3
+   Returns: the depth of the best model. Ties are broken by returning the simplest model i.e. least depth.
+   """
+   assert len(x_train) == len(y_train)
+
+   # take a subsample for hyperparameter testing
+   if subsample_size and len(x_train) > subsample_size:
+      np.random.seed(seed)
+      idx = np.random.choice(len(x_train), subsample_size, replace=False)
+      x_train = x_train[idx]
+      y_train = y_train[idx]
    
+   # permute the data randomly
+   if seed is not None:
+      np.random.seed(seed)
+      perm = np.random.permutation(len(x_train))
+      x_train = x_train[perm]
+      y_train = y_train[perm]
+   
+   folds = kfold_inds(len(x_train), k)
+   best_score = -1.0
+   do_break = False
+   
+   for depth in range(1, max_depth + 1):
+      print(f"Testing depth = {depth}")
+      scores = []
+      
+      best_fold_score = -1.0
+
+      for fold in folds:
+         start, end = fold
+
+         # Split into validation and training
+         xi_test = x_train[start:end]
+         yi_test = y_train[start:end]
+
+         xi_train = np.concatenate((x_train[:start], x_train[end:]), axis=0)
+         yi_train = np.concatenate((y_train[:start], y_train[end:]), axis=0)
+
+         header, train_data = ID3_format(xi_train, yi_train)
+
+         try:
+               model = ID3()
+               model.fit(header, train_data, depth, verbose=False)
+   
+               header_test, test_data = ID3_format(xi_test, yi_test)
+               predictions = model.predict(header_test, test_data, verbose=False)
+
+         except Exception as e:
+               print("depth too large, interrupting...")
+               do_break = True
+               break
+         score = metric(predictions, yi_test) 
+         scores.append(score)
+         
+         if score > best_fold_score:
+               best_fold_score = score
+               best_fold_preds, true_ys = predictions, yi_test
+      
+      if do_break:
+         break
+      
+      
+      mean_acc = np.mean(scores)
+      print(f"Mean F1-score (depth={depth}): {mean_acc:.4f}")
+
+      if mean_acc > best_score:
+         best_score = mean_acc
+         best_depth = depth
+         ### Generate confusion matrix
+         y_true = np.array(true_ys, dtype=int).ravel()
+         y_pred = np.array(best_fold_preds, dtype=int)
+         cm = create_confusion_matrix(y_true, y_pred)
+         
+         ###
+
+   print(f"\nBest depth = {best_depth} with mean F1-score = {best_score:.4f}")
+   # display the best confusion matrix
+   _ = cm_visualization(cm, f"depth = {depth}")
+   return best_depth    
