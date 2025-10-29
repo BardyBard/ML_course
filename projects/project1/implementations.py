@@ -13,7 +13,7 @@ def compute_loss(y, tx, w):
         the value of the loss (a scalar), corresponding to the input parameters w.
     """
     e = y - tx @ w
-    average = np.mean(e ** 2) / 2
+    average = np.mean(e**2) / 2
     return average
 
 
@@ -90,7 +90,7 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
     for _ in range(max_iters):
         random_index = np.random.randint(N)
         sampled_y = np.array([y[random_index]])
-        sampled_tx = tx[random_index:random_index+1, :].flatten()
+        sampled_tx = tx[random_index : random_index + 1, :].flatten()
         grad = compute_gradient_sgd(sampled_y, sampled_tx, w)
         w = w - gamma * grad
     loss = compute_loss(y, tx, w)
@@ -103,14 +103,14 @@ def least_squares(y, tx):
     Args:
         y: numpy array of shape=(N, )
         tx: numpy array of shape=(N, D)
-        
+
     Returns:
         (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
-    # Proceed carefully: naive impletentaion is ill-conditioned.  
-    # Let np.linalg.solve do the hard work. 
+    # Proceed carefully: naive impletentaion is ill-conditioned.
+    # Let np.linalg.solve do the hard work.
     # Note: tx.T @ tx seems to be singular, which is a problem for np.linalg.solve.
-    # There are multiple ways to combat this: 
+    # There are multiple ways to combat this:
     # - removing linearly dependent rows and columns
     # - adding regularization; but that would be equivalent to ridge/lasso
     # I suggest we try fixing it in the 1st way, but will check with the TA's as well. -M
@@ -130,7 +130,7 @@ def ridge_regression(y, tx, lambda_):
         y: numpy array of shape=(N, )
         tx: numpy array of shape=(N, D)
         lambda_: float. The regularization parameter
-        
+
     Returns:
         (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
@@ -164,15 +164,15 @@ def compute_logistic_loss(y, tx, w):
     Returns:
         the value of the loss (a scalar), corresponding to the input parameters w.
     """
-    y = (y == 1).astype(int) # convert y from {-1, +1} to {0, 1}
+    y = (y == 1).astype(int)  # convert y from {-1, +1} to {0, 1}
     z = tx @ w
-    epsilon = 1e-5 # epsilon trick to control values close to 0 and 1. Source: https://stackoverflow.com/questions/38125319/python-divide-by-zero-encountered-in-log-logistic-regression
+    epsilon = 1e-8  # epsilon trick to control values close to 0 and 1. Source: https://stackoverflow.com/questions/38125319/python-divide-by-zero-encountered-in-log-logistic-regression
     term1 = y * np.log(sigmoid(z) + epsilon)
     term2 = (1 - y) * np.log(1 - sigmoid(z) + epsilon)
-    return -np.mean(term1 + term2) # loss does not include the penalty term
+    return -np.mean(term1 + term2)  # loss does not include the penalty term
 
 
-def compute_logistic_gradient(y, tx, w, lambda_ = None):
+def compute_logistic_gradient(y, tx, w, lambda_=None):
     """Computes the gradient of the logistic loss function at w.
 
     Args:
@@ -186,12 +186,12 @@ def compute_logistic_gradient(y, tx, w, lambda_ = None):
     N = tx.shape[0]
     e = sigmoid(tx @ w) - y
     average = (tx.T @ e) / N
-    if lambda_: # L2 regularization
-        average += 2 * lambda_ * w # derivation of ||w||**2
+    if lambda_:  # L2 regularization
+        average += 2 * lambda_ * w  # derivation of ||w||**2
     return average
 
 
-def logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_ = None):
+def logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_=None):
     """Logistic regression using gradient descent.
 
     Args:
@@ -211,8 +211,26 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_ = None):
     loss = compute_logistic_loss(y, tx, w)
     return w, loss
 
+
 def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    """
+    Regularized logistic regression using gradient descent.
+
+    Args:
+        y: numpy array of shape=(N, ). Target values.
+        tx: numpy array of shape=(N, D). Input data.
+        lambda_: float. Regularization parameter.
+        initial_w: numpy array of shape=(D, ). Initial weights.
+        max_iters: int. Number of iterations for gradient descent.
+        gamma: float. Learning rate.
+
+    Returns:
+        tuple: A tuple (w, loss) where:
+            - w: numpy array of shape=(D, ). Final weights.
+            - loss: float. Final loss value.
+    """
     return logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_)
+
 
 def preprocess(x_train):
     """
@@ -238,8 +256,8 @@ def preprocess(x_train):
     x_train = (x_train - x_mean) / x_std
     # Clip extreme outliers
     x_train = np.clip(x_train, -5, 5)
-    # Prepend the 1s column 
-    ones = np.ones((len(x_train),1), dtype=float)
+    # Prepend the 1s column
+    ones = np.ones((len(x_train), 1), dtype=float)
     tx = np.hstack((ones, x_train.astype(float)))
     # Done!
     return tx
