@@ -78,9 +78,9 @@ def load_csv_data(
     x_test = x_test[:, 1:]
 
     # Custom: what to do with NaNs
-    if NaNstrat:
-        x_train = removeNaNs(x_train)
-        x_test = removeNaNs(x_test)
+
+    x_train = removeNaNs(x_train)
+    x_test = removeNaNs(x_test)
 
     return x_train, x_test, y_train, train_ids, test_ids
 
