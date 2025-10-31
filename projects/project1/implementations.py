@@ -127,11 +127,12 @@ def ridge_regression(y, tx, lambda_):
         (w, loss): tuple of numpy array of shape (D,) w last weight and float.
     """
     # solve Mw = b
-    I = np.eye(tx.shape[1])
-    M = tx.T @ tx + lambda_ * I
+    N, D = tx.shape
+    I = np.eye(D)
+    A = tx.T @ tx + 2 * N * lambda_ * I
     b = tx.T @ y
-    w = np.linalg.solve(M, b)
-    loss = compute_loss(y, tx, w)
+    w = np.linalg.solve(A, b)
+    loss = compute_loss(y, tx, w)  # MSE only, no penalty term
     return w, loss
 
 
