@@ -294,10 +294,6 @@ def main():
     x_train, x_mean, top_comps = pca_fit(x_train, MAX_PCA_DIMS)
     x_test = pca_transform(x_test, x_mean, top_comps)
 
-    # Add ones column to both.
-    x_train = np.hstack((np.ones((x_train.shape[0], 1)), x_train))
-    x_test = np.hstack((np.ones((x_test.shape[0], 1)), x_test))
-
     # Split the training dataset for evaluation.
     tx_train_split, tx_test_split, y_train_split, y_test_split = split_data(x_train, y_train)
 
