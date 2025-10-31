@@ -8,7 +8,7 @@ Data preprocessing steps that were used in all of the models can be found separa
 
 During the exploratory phase, pandas was used for simplicity of data wrangling and data inspection. However, **no pandas methods were used in the final pipeline**. Instead, the column names were exported and dropped using a helper `load_csv_data` in helpers.py.
 
-implementations.py contains implementations of ML methods seen in class i.e. everything needed for Step 2 of the project task.
+implementations.py contains implementations of ML methods seen in class i.e. everything needed for Step 2 of the project task. Those methods can be explored by running the in-class-models.ipynb notebook.
 helpers.py contains helper methods used in one or more model implementations i.e. everything needed for Step 3 of the project task. 
 
 The submitted report can be seen in CS-433_Machine_Learning_Project1.pdf.
