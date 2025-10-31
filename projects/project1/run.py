@@ -2,6 +2,7 @@ from implementations import *
 from helpers import *
 from ID3 import *
 from knn import *
+from nn_solution import *
 
 # change this toggle to run a different model
 model_to_run = "KNN"  # options: ID3, KNN, NN
@@ -60,7 +61,7 @@ if model_to_run == "ID3":
     preds_to_int = [int(prediction) for prediction in predictions]
     create_csv_submission(test_ids, preds_to_int, output_file_name)
 
-if model_to_run == "KNN":
+elif model_to_run == "KNN":
     drop_columns = ["FRUITJU1", "_AIDTST3", "HIVTST6", "_FRUTSUM", "FRUTDA1_",
                 "_FRUTSUM", "_BMI5", "HIVTST6", "CTELENUM", "PVTRESD1",
                 "COLGHOUS", "STATERES", "CELLFON3", "LADULT", "NUMADULT",
@@ -120,3 +121,65 @@ if model_to_run == "KNN":
                                         17)
     predictions = np.where(predictions == 0, -1, predictions)
     create_csv_submission(test_ids, predictions, output_file_name)
+
+elif model_to_run == "NN":
+    # Load the data.
+    PATH_TO_DATASET = "data/dataset"
+    x_train, x_test, y_train, train_ids, test_ids = load_csv_data(
+        PATH_TO_DATASET, NaNstrat="fill", remove_columns=DROP_COLUMNS, max_rows=1000
+    )
+
+    # Take only a prefix of the rows, it's too slow with the entire dataset.
+    MAX_ROWS = 70000
+    x_train = x_train[:MAX_ROWS]
+    y_train = y_train[:MAX_ROWS]
+
+    # Balance the dataset because no. of 1s is way smaller than no. of 0s.
+    x_train, y_train = balance_dataset(x_train, y_train, 2)
+
+    # Preprocess the train dataset.
+    x_train, mask = preprocess_structural(x_train, ones=False)
+    x_train = preprocess_unstructural(x_train)
+
+    # Preprocess the test dataset.
+    x_test = x_test[:, mask]
+    x_test = preprocess_unstructural(x_test)
+
+    # Apply dimensionality reduction.
+    MAX_PCA_DIMS = 35
+    x_train, x_mean, top_comps = pca_fit(x_train, MAX_PCA_DIMS)
+    x_test = pca_transform(x_test, x_mean, top_comps)
+
+    # Split the training dataset for evaluation.
+    tx_train_split, tx_test_split, y_train_split, y_test_split = split_data(
+        x_train, y_train)
+
+    y_train_split = y_train_split.reshape((-1, 1))
+    y_test_split = y_test_split.reshape((-1, 1))
+    y_train_split = (1 + y_train_split) / 2
+    y_test_split = (1 + y_test_split) / 2
+
+    print(np.shape(tx_train_split))
+    print(np.shape(y_train_split))
+
+    D = tx_train_split.shape[1]
+    NUM_ITER = 1000
+
+    # Run the genetic algorithm.
+    nn_shape = [D, 8, 8, 8, 8, 1]
+    w = gen_alg(
+        tx_train_split, y_train_split,
+        nn_shape,
+        16, 1, 0.1, 0.1, NUM_ITER
+    )
+
+    # Calculate the confusion matrix and graph it.
+    y_pred = (NN(nn_shape, w).evaluate(tx_test_split) > 0.5).astype(
+        np.float128)
+    print(f"predicted {y_pred[:16]}")
+    print(f"true {y_test_split[:16]}")
+
+    # Evaluate on actual test dataset for submission.
+    y_submit = (NN(nn_shape, w).evaluate(x_test) > 0.5).astype(
+        np.int32) * 2 - 1
+    create_csv_submission(test_ids, y_submit, name=output_file_name)
