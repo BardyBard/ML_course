@@ -403,3 +403,41 @@ def F1(true_ys, predictions):
     f1 = 2 * precision * recall / (precision + recall + epsilon)
 
     return f1
+
+
+def preprocess_structural(x_train, ones=True):
+    """
+    Preprocess training data (no test data yet).
+    In particular this means:
+        - remove 0-variance columns, they don't provide any useful information
+        - standardize each column (feature)
+        - clip extreme outliers after standardizations
+        - prepend a bias column of 1s
+
+    Args:
+        x_train: numpy array of shape (N, D)
+
+    Returns:
+        tx: numpy array of shape (N, D'), where D' <= D + 1
+        mask: 0-1 numpy array of shape (, D'), which columns were kept
+    """
+    # Remove 0-variance columns
+    mask = x_train.std(axis=0) != 0
+    tx = x_train[:, mask]
+    if ones:
+        # Prepend the 1s column
+        ones = np.ones((len(x_train), 1), dtype=float)
+        tx = np.hstack((ones, x_train.astype(float)))
+
+    return tx, mask
+
+
+def preprocess_unstructural(x_train):
+    # Standardize
+    x_mean = np.nanmean(x_train, axis=0)
+    x_std = np.nanstd(x_train, axis=0)
+    x_std[x_std == 0] = 1
+    x_train = (x_train - x_mean) / x_std
+    # Clip extreme outliers
+    x_train = np.clip(x_train, -5, 5)
+    return x_train
