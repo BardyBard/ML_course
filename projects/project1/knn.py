@@ -1,6 +1,6 @@
 import numpy as np
 
-# ---------------- KNN IMPLEMENTATION
+# ---------------- KNN INITIAL IMPLEMENTATION
 # Built with the help of https://machinelearningmastery.com/tutorial-to-implement-k-nearest-neighbors-in-python-from-scratch/
 def get_neighbors(train, test_row, num_neighbors):
     """Find k nearest neighbors using vectorized operations.
@@ -58,6 +58,7 @@ def predict_classification_batch(train_features, train_labels, test_features, nu
 
     return predictions
 
+# ---------------- KNN STREAMING IMPLEMENTATION
 def knn_predict_streaming(train_X, y_int, test_X, k, test_batch=1024, train_block=4096):
     """
     Memory-efficient streaming KNN classification.
