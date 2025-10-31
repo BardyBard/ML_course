@@ -1,6 +1,6 @@
-'''
+"""
 Implementation of the solution using neural networks and genetic algorithm.
-'''
+"""
 from nn import *
 from implementations import *
 from helpers import *
@@ -14,7 +14,14 @@ from functools import partial
 
 # Columns to ignore from the dataset
 DROP_COLUMNS = [
-    "FRUITJU1", "_AIDTST3", "HIVTST6", "_FRUTSUM", "FRUTDA1_", "_FRUTSUM", "_BMI5",  "HIVTST6",
+    "FRUITJU1",
+    "_AIDTST3",
+    "HIVTST6",
+    "_FRUTSUM",
+    "FRUTDA1_",
+    "_FRUTSUM",
+    "_BMI5",
+    "HIVTST6",
     "CTELENUM",
     "PVTRESD1",
     "COLGHOUS",
@@ -191,7 +198,7 @@ DROP_COLUMNS = [
     "PAVIG21_",
     "PA1VIGM_",
     "_FLSHOT6",
-    "_PNEUMO2"
+    "_PNEUMO2",
 ]
 
 
@@ -199,8 +206,10 @@ def _worker(w, x_train, y_train, nn_shape):
     return (NN(nn_shape, w).error(x_train, y_train), w)
 
 
-def gen_alg(x_train, y_train, nn_shape, popsize, elitism, mutation_prob, mutation_scale, iter):
-    '''
+def gen_alg(
+    x_train, y_train, nn_shape, popsize, elitism, mutation_prob, mutation_scale, iter
+):
+    """
     Genetic algorithm for optimization.
 
     Args:
@@ -215,7 +224,7 @@ def gen_alg(x_train, y_train, nn_shape, popsize, elitism, mutation_prob, mutatio
 
     Returns:
         neural network weights received from the optimization algorithm.
-    '''
+    """
     rng = np.random.default_rng()
 
     population = [NN(nn_shape).get_weight_vector() for i in range(popsize)]
@@ -240,7 +249,7 @@ def gen_alg(x_train, y_train, nn_shape, popsize, elitism, mutation_prob, mutatio
                     list(range(len(population))),
                     2,
                     p=[fitness_func(x[0]) / total_fitness for x in population],
-                    replace=False
+                    replace=False,
                 )
 
                 t1, t2 = population[i1], population[i2]
@@ -249,23 +258,23 @@ def gen_alg(x_train, y_train, nn_shape, popsize, elitism, mutation_prob, mutatio
                 w = (t1[1] + t2[1]) / 2
                 for i in range(len(w)):
                     if rng.random() <= mutation_prob:
-                        w[i] += rng.normal(0.0, mutation_scale) 
+                        w[i] += rng.normal(0.0, mutation_scale)
 
                 new_population.append(w)
-            
+
             population = new_population
             population = pool.map(f, population)
             population.sort(key=lambda x: x[0])
 
             total_fitness = sum(fitness_func(x[0]) for x in population)
-            
+
     return population[0][1]
 
 
 def main():
-    '''
+    """
     Entry point.
-    '''
+    """
 
     # Load the data.
     PATH_TO_DATASET = "data/dataset"
@@ -277,14 +286,14 @@ def main():
     MAX_ROWS = 70000
     x_train = x_train[:MAX_ROWS]
     y_train = y_train[:MAX_ROWS]
-    
+
     # Balance the dataset because no. of 1s is way smaller than no. of 0s.
     x_train, y_train = balance_dataset(x_train, y_train, 2)
 
     # Preprocess the train dataset.
     x_train, mask = preprocess_structural(x_train, ones=False)
     x_train = preprocess_unstructural(x_train)
-    
+
     # Preprocess the test dataset.
     x_test = x_test[:, mask]
     x_test = preprocess_unstructural(x_test)
@@ -295,7 +304,9 @@ def main():
     x_test = pca_transform(x_test, x_mean, top_comps)
 
     # Split the training dataset for evaluation.
-    tx_train_split, tx_test_split, y_train_split, y_test_split = split_data(x_train, y_train)
+    tx_train_split, tx_test_split, y_train_split, y_test_split = split_data(
+        x_train, y_train
+    )
 
     y_train_split = y_train_split.reshape((-1, 1))
     y_test_split = y_test_split.reshape((-1, 1))
@@ -310,11 +321,7 @@ def main():
 
     # Run the genetic algorithm.
     nn_shape = [D, 8, 8, 8, 8, 1]
-    w = gen_alg(
-        tx_train_split, y_train_split,
-        nn_shape,
-        16, 1, 0.1, 0.1, NUM_ITER
-    )
+    w = gen_alg(tx_train_split, y_train_split, nn_shape, 16, 1, 0.1, 0.1, NUM_ITER)
 
     # Calculate the confusion matrix and graph it.
     y_pred = (NN(nn_shape, w).evaluate(tx_test_split) > 0.5).astype(np.float128)

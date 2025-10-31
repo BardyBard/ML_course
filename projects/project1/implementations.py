@@ -224,7 +224,7 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     return logistic_regression(y, tx, initial_w, max_iters, gamma, lambda_)
 
 
-def preprocess_structural(x_train, ones = True):
+def preprocess_structural(x_train, ones=True):
     """
     Preprocess training data (no test data yet).
     In particular this means:
@@ -249,6 +249,7 @@ def preprocess_structural(x_train, ones = True):
         tx = np.hstack((ones, x_train.astype(float)))
 
     return tx, mask
+
 
 def preprocess_unstructural(x_train):
     # Standardize

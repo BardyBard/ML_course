@@ -6,12 +6,9 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
 def load_csv_data(
-    data_path,
-    max_rows=None,
-    NaNstrat=None,
-    keep_columns=None,
-    remove_columns=None
+    data_path, max_rows=None, NaNstrat=None, keep_columns=None, remove_columns=None
 ):
     """
     This function loads the data and returns the respectinve numpy arrays.
@@ -36,10 +33,14 @@ def load_csv_data(
     feature_names = headers[1:]  # after ID
     # 2) Compute columns to keep at parse time (not after)
     if keep_columns:
-        keep_feature_idx = [i for i, col in enumerate(feature_names) if col in set(keep_columns)]
+        keep_feature_idx = [
+            i for i, col in enumerate(feature_names) if col in set(keep_columns)
+        ]
     else:
         remove = set(remove_columns or [])
-        keep_feature_idx = [i for i, col in enumerate(feature_names) if col not in remove]
+        keep_feature_idx = [
+            i for i, col in enumerate(feature_names) if col not in remove
+        ]
 
     # CSV indices to read: ID column (0) + selected features (offset by +1 because of ID)
     x_usecols = [0] + [i + 1 for i in keep_feature_idx]
@@ -76,12 +77,13 @@ def load_csv_data(
     x_train = x_train[:, 1:]
     x_test = x_test[:, 1:]
 
-    # Custom: what to do with NaNs 
+    # Custom: what to do with NaNs
     if NaNstrat:
         x_train = removeNaNs(x_train)
         x_test = removeNaNs(x_test)
 
     return x_train, x_test, y_train, train_ids, test_ids
+
 
 def removeNaNs(x):
     """
@@ -179,6 +181,7 @@ def split_data(x, y, test_size=0.2, random_state=None):
 
     return x[train_idx], x[test_idx], y[train_idx], y[test_idx]
 
+
 def create_confusion_matrix(y_test_split, y_pred_binary):
     # Create confusion matrix manually
     # True Negatives: actual -1, predicted -1
@@ -190,10 +193,10 @@ def create_confusion_matrix(y_test_split, y_pred_binary):
     # True Positives: actual 1, predicted 1
     tp = np.sum((y_test_split == 1) & (y_pred_binary == 1))
 
-    return np.array([[tn, fp],
-                   [fn, tp]])
+    return np.array([[tn, fp], [fn, tp]])
 
-def cm_visualization(cm, title = None):
+
+def cm_visualization(cm, title=None):
     """
     Create and return a visualization of a confusion matrix.
 
@@ -204,26 +207,32 @@ def cm_visualization(cm, title = None):
         matplotlib.figure.Figure: The generated confusion matrix visualization
     """
     # Calculate percentages
-    cm_percent = cm.astype('float') / cm.sum() * 100
+    cm_percent = cm.astype("float") / cm.sum() * 100
 
     # Create annotations with both counts and percentages
     annotations = np.empty_like(cm, dtype=object)
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            annotations[i, j] = f'{cm[i, j]}\n({cm_percent[i, j]:.2f}%)'
+            annotations[i, j] = f"{cm[i, j]}\n({cm_percent[i, j]:.2f}%)"
 
     # Plot confusion matrix
     fig = plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=annotations, fmt='', cmap='Blues',
-                xticklabels=['Predicted -1', 'Predicted 1'],
-                yticklabels=['Actual -1', 'Actual 1'])
+    sns.heatmap(
+        cm,
+        annot=annotations,
+        fmt="",
+        cmap="Blues",
+        xticklabels=["Predicted -1", "Predicted 1"],
+        yticklabels=["Actual -1", "Actual 1"],
+    )
     plot_title = "Confusion Matrix "
     if title is not None:
         plot_title += title
     plt.title(plot_title)
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
+    plt.ylabel("True Label")
+    plt.xlabel("Predicted Label")
     return fig
+
 
 def pca_reduction(X, k):
     """
@@ -257,6 +266,7 @@ def pca_reduction(X, k):
     X_pca = np.dot(X_centered, top_components)
 
     return X_pca
+
 
 def pca_fit(X, k):
     """
@@ -305,10 +315,12 @@ def balance_dataset(x, y, neg_pos_ratio, seed=45):
     neg_ids = np.where(y == -1)[0]
     no_positives = len(pos_ids)
     no_negs = len(neg_ids)
-    #print(f"there are {no_positives} positive samples in the dataset")
+    # print(f"there are {no_positives} positive samples in the dataset")
     if no_negs / no_positives < neg_pos_ratio:
         return x, y  # return x,y unchanged
-    target_negs = int(no_positives * neg_pos_ratio) # this is the amount of negative examples we want
+    target_negs = int(
+        no_positives * neg_pos_ratio
+    )  # this is the amount of negative examples we want
     # permute the data randomly before returning
     if seed is None:
         seed = 45
@@ -317,6 +329,7 @@ def balance_dataset(x, y, neg_pos_ratio, seed=45):
 
     balanced_ids = np.concatenate([pos_ids, neg_ids_sampled])
     return x[balanced_ids], y[balanced_ids]
+
 
 def calculate_f1(cm):
     tn, fp, fn, tp = cm.ravel()
@@ -332,7 +345,7 @@ def calculate_f1(cm):
     return 2 * (precision * recall) / (precision + recall)
 
 
-def kfold_inds(n_samples : int, k : int, seed=42):
+def kfold_inds(n_samples: int, k: int, seed=42):
     """
     Returns start and (exclusive) end indices of k folds on n_samples samples.
     Any remainder is added to the last fold.
@@ -345,15 +358,16 @@ def kfold_inds(n_samples : int, k : int, seed=42):
     """
     np.random.seed(seed)
     inds = []
-    
+
     for i in range(k):
-        inds.append([n_samples//k * i, n_samples//k * (i+1)])
-    inds[-1][1] = n_samples # add the rest to the last fold
+        inds.append([n_samples // k * i, n_samples // k * (i + 1)])
+    inds[-1][1] = n_samples  # add the rest to the last fold
     return inds
 
-def metric(true_ys, predictions): 
+
+def metric(true_ys, predictions):
     """
-    The metric we use to decide which model hyperparameters we use. 
+    The metric we use to decide which model hyperparameters we use.
     Currently, F1 score is implemented.
     Args:
         true_ys: list or numpy array, true labels.
@@ -362,6 +376,7 @@ def metric(true_ys, predictions):
         score: float, F1 score between true and predicted labels.
     """
     return F1(true_ys, predictions)
+
 
 def F1(true_ys, predictions):
     """
@@ -382,8 +397,8 @@ def F1(true_ys, predictions):
     fn = np.sum((y_pred == -1) & (y_true == 1))
 
     # Precision, recall, F1
-    epsilon = 1e-10 # for fixing numerical issues
-    precision = tp / (tp + fp + epsilon) 
+    epsilon = 1e-10  # for fixing numerical issues
+    precision = tp / (tp + fp + epsilon)
     recall = tp / (tp + fn + epsilon)
     f1 = 2 * precision * recall / (precision + recall + epsilon)
 
