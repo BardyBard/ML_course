@@ -280,7 +280,7 @@ elif model_to_run == "NN":
     # Load the data.
     PATH_TO_DATASET = "data/dataset"
     x_train, x_test, y_train, train_ids, test_ids = load_csv_data(
-        PATH_TO_DATASET, NaNstrat="fill", remove_columns=DROP_COLUMNS, max_rows=1000
+        PATH_TO_DATASET, NaNstrat="fill", remove_columns=DROP_COLUMNS, max_rows=None
     )
 
     # Take only a prefix of the rows, it's too slow with the entire dataset.
