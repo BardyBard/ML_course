@@ -321,17 +321,6 @@ def main():
     print(f"predicted {y_pred[:16]}")
     print(f"true {y_test_split[:16]}")
 
-    from sklearn.metrics import f1_score, confusion_matrix, ConfusionMatrixDisplay
-    print(f"f1 score is {f1_score(y_test_split, y_pred)}")
-
-    cm = confusion_matrix(y_test_split, y_pred, normalize="all")
-    print(cm)
-
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
-    disp.plot(cmap=plt.cm.Blues)
-    plt.title("Confusion Matrix")
-    plt.show()
-
     # Evaluate on actual test dataset for submission.
     y_submit = (NN(nn_shape, w).evaluate(x_test) > 0.5).astype(np.int32) * 2 - 1
     create_csv_submission(test_ids, y_submit, "y_pred.csv")
